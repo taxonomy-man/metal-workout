@@ -30,20 +30,51 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('[Service Worker] Caching app shell');
-        // Försök cachelagra alla definierade URL:er
-        // Viktigt: Om någon av dessa misslyckas (t.ex. 404), misslyckas hela installationen!
-        return cache.addAll(URLS_TO_CACHE).catch(error => {
-             console.error('[Service Worker] Failed to cache URLs during install:', error);
-             // Kasta felet vidare så installationen misslyckas om kritisk fil saknas
-             throw error;
+        console.log('[Service Worker] Caching app shell individually...');
+        // Fetch and cache each URL individually, allowing no-cors for external resources
+        const cachePromises = URLS_TO_CACHE.map(urlToCache => {
+          // Create a new Request object to specify the mode
+          const request = new Request(urlToCache, { mode: 'no-cors' });
+          return fetch(request)
+            .then(response => {
+              if (response.status === 404) {
+                  // Log specific 404s, but don't fail the entire install if one file is missing
+                  console.error(`[Service Worker] Failed to fetch ${urlToCache}: 404 Not Found`);
+                  // Don't return cache.put promise here, effectively skipping this file
+                  return Promise.resolve(); // Resolve so Promise.all doesn't reject immediately
+              } 
+              // For opaque responses (mode: 'no-cors'), status is 0, but we still cache them
+              // For same-origin or CORS-enabled responses, check for valid status
+              if (!response.ok && response.status !== 0) { 
+                  console.error(`[Service Worker] Failed to fetch ${urlToCache}: Status ${response.status}`);
+                  // Don't return cache.put promise here
+                   return Promise.resolve();
+              }
+              return cache.put(urlToCache, response); // Use original URL as cache key
+            })
+            .catch(error => {
+              console.error(`[Service Worker] Fetching ${urlToCache} failed:`, error);
+               // Don't reject Promise.all immediately on individual fetch errors
+               return Promise.resolve(); 
+            });
         });
+
+        // Wait for all cache operations to settle (resolve or reject individually)
+        return Promise.all(cachePromises)
+            .then(() => {
+                console.log('[Service Worker] Finished attempting to cache URLs.');
+            })
+            // We don't catch here anymore, individual errors are handled above
       })
       .then(() => {
          console.log('[Service Worker] Installation complete, skipping waiting.');
          // Tvinga den nya Service Workern att bli aktiv direkt
          return self.skipWaiting();
       })
+       // Add a catch at the end of the waitUntil chain to handle fatal errors like inability to open cache
+       .catch(error => {
+            console.error('[Service Worker] Installation failed fatally:', error);
+       })
   );
 });
 

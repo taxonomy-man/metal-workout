@@ -7,7 +7,11 @@
     <link rel="icon" href="icons/icon-192x192.png" type="image/png" sizes="192x192">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 
-    <title>Interaktiv PWA Träningsapp v1.4 - Metal Edition (Spara Pass)</title> <script src="https://cdn.tailwindcss.com"></script>
+    <title>Interaktiv PWA Träningsapp v1.6 - Metal Edition (Login)</title> <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,12 +20,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
     <style>
-        /* Anpassade typsnitt */
+        /* Behåll samma CSS som v1.5, lägg bara till stil för login/logout/admin */
+         /* Anpassade typsnitt */
         body {
             font-family: 'Russo One', sans-serif;
             overscroll-behavior-y: contain;
             background-color: #000000;
             color: #e5e7eb;
+            -webkit-tap-highlight-color: transparent; /* Ta bort blå highlight vid tryck på mobil */
         }
         h1, h2, h3, h4, h5, h6 {
             font-family: 'Metal Mania', cursive;
@@ -43,35 +49,39 @@
         .hidden { display: none; }
 
         /* Flikar */
-        .tab-button { border-bottom-width: 3px; border-color: transparent; transition: all 0.3s ease; cursor: pointer; color: var(--color-text-secondary); padding: 0.75rem 1rem; text-transform: uppercase; font-size: 0.875rem; }
+        .tab-button { border-bottom-width: 3px; border-color: transparent; transition: all 0.3s ease; cursor: pointer; color: var(--color-text-secondary); padding: 0.75rem 0.5rem; /* Mindre horisontell padding */ text-transform: uppercase; font-size: 0.8rem; /* Mindre font på små skärmar */ md:font-size: 0.875rem; md:padding: 0.75rem 1rem;}
         .tab-button:hover { color: var(--color-text-primary); border-color: var(--color-secondary); }
         .tab-button.active { border-color: var(--color-primary); color: var(--color-text-primary); font-weight: bold; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
         /* Kort/Sektioner */
-        .section-card { background-color: var(--color-background); border: 1px solid var(--color-border); border-radius: 0.25rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
-        .info-section { background-color: var(--color-surface); border: 1px solid var(--color-border); border-radius: 0.25rem; padding: 1.5rem; margin-top: 1.5rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); }
+        .section-card { background-color: var(--color-background); border: 1px solid var(--color-border); border-radius: 0.25rem; padding: 1rem; /* Mindre padding default */ md:padding: 1.5rem; margin-bottom: 1rem; md:margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
+        .info-section { background-color: var(--color-surface); border: 1px solid var(--color-border); border-radius: 0.25rem; padding: 1rem; md:padding: 1.5rem; margin-top: 1rem; md:margin-top: 1.5rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); }
         .info-section h3 { color: var(--color-text-primary); }
-        .info-section ul { color: var(--color-text-secondary); }
+        .info-section ul { color: var(--color-text-secondary); margin-left: 1rem; /* Mindre indrag */ }
 
         /* Inputfält */
-        input[type="number"], input[type="text"], select { width: 5rem; padding: 0.6rem 0.5rem; border: 1px solid var(--color-border); border-radius: 0.25rem; text-align: center; background-color: var(--color-surface); color: var(--color-text-primary); font-family: 'Russo One', sans-serif; -moz-appearance: textfield; }
+        input[type="number"], input[type="text"], input[type="email"], select { width: 100%; /* Full bredd för admin input */ max-width: 20rem; /* Max bredd */ padding: 0.6rem 0.5rem; /* Justerad padding */ border: 1px solid var(--color-border); border-radius: 0.25rem; text-align: left; /* Vänsterställ admin input */ background-color: var(--color-surface); color: var(--color-text-primary); font-family: 'Russo One', sans-serif; -moz-appearance: textfield; font-size: 0.9rem; /* Lite mindre text i fälten */ }
+        input[type="number"] { text-align: center; width: 4.5rem; max-width: none; } /* Återställ för nummerinput */
         input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         input::placeholder { color: var(--color-text-secondary); opacity: 0.7; }
         input:disabled { background-color: #374151; cursor: not-allowed; opacity: 0.6; }
-        select { width: auto; min-width: 150px; }
-        input[type="file"] { display: none; } /* Dölj standard filinput */
+        select { width: auto; min-width: 130px; /* Smalare select */ font-size: 0.9rem; }
+        input[type="file"] { display: none; }
 
         /* Text för förslag/rekommendation */
-        .suggestion-text { font-size: 0.75rem; color: var(--color-text-secondary); margin-left: 0.25rem; font-style: italic; }
-        .recommendation-box { background-color: rgba(220, 38, 38, 0.1); border: 1px solid var(--color-primary); color: #fecaca; padding: 0.75rem 1rem; border-radius: 0.25rem; margin-top: 0.75rem; font-size: 0.875rem; text-align: center; }
+        .suggestion-text { font-size: 0.7rem; /* Mindre text */ color: var(--color-text-secondary); margin-left: 0.25rem; font-style: italic; }
+        .recommendation-box { background-color: rgba(220, 38, 38, 0.1); border: 1px solid var(--color-primary); color: #fecaca; padding: 0.5rem 0.75rem; /* Mindre padding */ border-radius: 0.25rem; margin-top: 0.75rem; font-size: 0.8rem; /* Mindre text */ text-align: center; }
 
         /* Knappar */
-        .btn { padding: 0.75rem 1.5rem; border-radius: 0.25rem; font-weight: bold; cursor: pointer; transition: all 0.2s ease; text-align: center; border: 1px solid transparent; text-transform: uppercase; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .btn { padding: 0.6rem 1rem; /* Mindre padding default */ md:padding: 0.75rem 1.5rem; border-radius: 0.25rem; font-weight: bold; cursor: pointer; transition: all 0.2s ease; text-align: center; border: 1px solid transparent; text-transform: uppercase; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; /* Mindre gap */ font-size: 0.8rem; /* Mindre text */ md:font-size: 0.875rem; }
         .btn:disabled { background-color: #4b5563; color: #9ca3af; cursor: not-allowed; opacity: 0.5; border-color: #4b5563; }
         .btn:active:not(:disabled) { transform: scale(0.97); }
-        .btn-sm { padding: 0.5rem 1rem; font-size: 0.875rem; }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.75rem; }
+        .btn i { font-size: 0.8em; /* Gör ikoner lite mindre än texten */ } /* Anpassa ikonstorlek */
+
+        /* ... (Behåll knappfärger som innan) ... */
         .btn-primary { background-color: var(--color-primary); color: var(--color-text-primary); border-color: #f87171; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.3), 0 2px 3px rgba(0,0,0,0.4); }
         .btn-primary:hover:not(:disabled) { background-color: #b91c1c; border-color: #ef4444; }
         .btn-secondary { background-color: var(--color-secondary); color: var(--color-text-primary); border-color: #6b7280; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2), 0 2px 3px rgba(0,0,0,0.3); }
@@ -83,199 +93,294 @@
         .btn-warning { background-color: var(--color-warning); color: #1f2937; border-color: #fcd34d; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2), 0 2px 3px rgba(0,0,0,0.3); }
         .btn-warning:hover:not(:disabled) { background-color: #b45309; border-color: #facc15; }
 
+
         /* Timer */
-        .timer-display { font-size: 3rem; font-weight: bold; color: var(--color-text-primary); background-color: var(--color-surface); padding: 1.5rem 2.5rem; border-radius: 0.25rem; display: inline-block; min-width: 150px; text-align: center; border: 1px solid var(--color-border); box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        .timer-display { font-size: 2.5rem; /* Mindre på mobil */ md:font-size: 3rem; font-weight: bold; color: var(--color-text-primary); background-color: var(--color-surface); padding: 1rem 1.5rem; md:padding: 1.5rem 2.5rem; border-radius: 0.25rem; display: inline-block; min-width: 120px; md:min-width: 150px; text-align: center; border: 1px solid var(--color-border); box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
         /* Set-rader */
-        .set-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: 1rem 0.5rem; border-bottom: 1px dashed var(--color-border); gap: 0.75rem; }
+        .set-row { display: flex; flex-direction: column; /* Stacka vertikalt default */ md:flex-row; /* Horisontellt på medium+ */ align-items: stretch; /* Sträck ut element */ md:align-items: center; justify-content: space-between; padding: 0.75rem 0.5rem; border-bottom: 1px dashed var(--color-border); gap: 0.5rem; /* Mindre gap */ }
         .set-row:last-child { border-bottom: none; }
-        .set-info { font-weight: bold; color: var(--color-text-primary); min-width: 60px; flex-basis: 60px; font-size: 1rem; }
-        .set-inputs { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; flex-grow: 1; justify-content: center; margin: 0.25rem 0; }
-        .set-inputs label { font-size: 0.875rem; color: var(--color-text-secondary); margin-right: 0.25rem; }
-        .set-actions { display: flex; gap: 0.5rem; justify-content: flex-end; flex-basis: 100%; md:flex-basis: auto; margin-top: 0.5rem; }
-        .set-status { font-weight: bold; text-align: right; flex-basis: 100%; md:flex-basis: auto; margin-top: 0.25rem; text-transform: uppercase; font-size: 0.8rem;}
+        .set-info { font-weight: bold; color: var(--color-text-primary); font-size: 0.9rem; /* Mindre text */ text-align: center; md:text-align: left; md:min-width: 60px; md:flex-basis: 60px; }
+        .set-inputs { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: center; /* Centrera inputs */ width: 100%; margin: 0.5rem 0; }
+        .set-inputs label { font-size: 0.8rem; color: var(--color-text-secondary); margin-right: 0.25rem; }
+        .set-actions { display: flex; gap: 0.5rem; justify-content: center; /* Centrera knappar */ width: 100%; margin-top: 0.5rem; }
+        .set-status { font-weight: bold; text-align: center; /* Centrera status */ width: 100%; margin-top: 0.5rem; text-transform: uppercase; font-size: 0.75rem;}
         .set-complete { color: var(--color-success); }
         .set-pending { color: var(--color-text-secondary); }
         .set-skipped { color: var(--color-warning); }
 
         /* Historik */
         .history-entry { background-color: var(--color-surface); border: 1px solid var(--color-border); border-radius: 0.25rem; padding: 1rem; margin-bottom: 1rem; }
-        .history-entry h4 { color: var(--color-primary); }
-        .history-exercise { margin-top: 0.5rem; padding-left: 1rem; border-left: 3px solid var(--color-secondary); }
+        .history-entry h4 { color: var(--color-primary); font-size: 1.1rem; /* Lite mindre */ }
+        .history-exercise { margin-top: 0.5rem; padding-left: 0.75rem; /* Mindre indrag */ border-left: 3px solid var(--color-secondary); font-size: 0.9rem; }
         .history-exercise strong { color: var(--color-text-primary); }
+        .admin-history-entry h4 { color: var(--color-warning); } /* Annan färg för adminvy */
 
         /* Statistik */
-        .chart-container { position: relative; margin: auto; height: 60vh; max-height: 400px; width: 95%; max-width: 800px; margin-bottom: 2rem; background-color: var(--color-surface); padding: 1rem; border-radius: 0.25rem; border: 1px solid var(--color-border); }
+        .chart-container { position: relative; margin: auto; height: 50vh; /* Lite lägre */ max-height: 350px; width: 100%; /* Full bredd på mobil */ max-width: 800px; margin-bottom: 1.5rem; background-color: var(--color-surface); padding: 0.5rem; /* Mindre padding */ border-radius: 0.25rem; border: 1px solid var(--color-border); }
         #stats-exercise-select { background-color: var(--color-surface); color: var(--color-text-primary); border: 1px solid var(--color-border); }
         /* Container */
-        .main-container { max-width: 4xl; margin-left: auto; margin-right: auto; background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url('https://placehold.co/1000x800/000000/4b5563?text=METAL+BG'); background-attachment: fixed; border-radius: 0.25rem; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5); padding: 1.5rem; md:padding: 2rem; border: 2px solid var(--color-border); }
+        .main-container { max-width: 4xl; margin-left: auto; margin-right: auto; background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.9)), url('https://placehold.co/1000x800/000000/4b5563?text=METAL+BG'); background-size: cover; background-attachment: fixed; border-radius: 0.25rem; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5); padding: 1rem; /* Mindre padding default */ md:padding: 2rem; border: 2px solid var(--color-border); min-height: 100vh; display: flex; flex-direction: column; }
         /* Header */
-        header h1 { color: var(--color-primary); text-shadow: 1px 1px 3px rgba(0,0,0,0.7); }
-        header p { color: var(--color-text-secondary); }
+        header { flex-shrink: 0; } /* Förhindra att headern krymper */
+        header h1 { color: var(--color-primary); text-shadow: 1px 1px 3px rgba(0,0,0,0.7); font-size: 2.5rem; md:font-size: 3rem; }
+        header p { color: var(--color-text-secondary); font-size: 1rem; md:font-size: 1.1rem; }
+        /* Main content area */
+        main { flex-grow: 1; } /* Låt main växa och ta upp plats */
         /* Footer */
-        footer { color: var(--color-text-secondary); font-size: 0.8rem; }
-        /* Data Management section */
-        #data-management { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--color-border); }
+        footer { color: var(--color-text-secondary); font-size: 0.75rem; flex-shrink: 0; margin-top: auto; /* Tryck ner footern */ border-top: 1px solid var(--color-border); padding-top: 1rem; }
+
+        /* Login Section */
+        #login-section { text-align: center; padding: 2rem 1rem; }
+        #login-section h2 { color: var(--color-primary); }
+
+        /* User Info in Header */
+        #user-info { text-align: right; font-size: 0.8rem; margin-bottom: 0.5rem; }
+        #user-info span { color: var(--color-text-secondary); }
+        #user-info button { margin-left: 0.5rem; }
+
+        /* Workout Overview */
+        #workout-overview-list { list-style: none; padding: 0; margin: 0; }
+        #workout-overview-list li { padding: 0.5rem 0; border-bottom: 1px solid var(--color-border); font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; }
+        #workout-overview-list li:last-child { border-bottom: none; }
+        #workout-overview-list li.current-exercise { color: var(--color-primary); font-weight: bold; }
+        #workout-overview-list li .status-icon { font-size: 0.8em; margin-left: 0.5rem; }
+        #workout-overview-list li .fa-check-circle { color: var(--color-success); }
+        #workout-overview-list li .fa-times-circle { color: var(--color-warning); } /* Skippad */
+        #workout-overview-list li .fa-spinner { color: var(--color-text-secondary); } /* Pågående */
+
+        /* Admin View */
+        #admin-user-input { margin-bottom: 1rem; }
+        #admin-history-list { max-height: 60vh; overflow-y: auto; } /* Scrollbar för admin-historik */
+        #admin-loading { text-align: center; padding: 1rem; color: var(--color-text-secondary); }
 
     </style>
 </head>
-<body class="bg-black p-4 md:p-8"> <div class="main-container"> <header class="mb-6 text-center">
-            <h1 class="text-4xl md:text-5xl font-bold">METAL WORKOUT</h1> <p class="text-lg mt-1">Forged in Iron - Fueled by Pain</p> <button id="notifications-btn" class="btn btn-secondary btn-sm mt-4 hidden" onclick="requestNotificationPermission()">
-                <i class="fas fa-bell"></i> Aktivera Notiser
-            </button>
+<body class="bg-black p-2 md:p-8">
+    <div class="main-container">
+        <header class="mb-4 md:mb-6">
+            <div id="user-info" class="hidden"> <span>Inloggad som: <span id="user-email" class="font-bold"></span></span>
+                <button class="btn btn-secondary btn-sm" onclick="logoutUser()">Logga ut</button>
+            </div>
+            <div class="text-center">
+                 <h1 class="text-3xl md:text-5xl font-bold">METAL WORKOUT</h1>
+                 <p class="text-base md:text-lg mt-1">Forged in Iron - Fueled by Pain</p>
+                 <button id="notifications-btn" class="btn btn-secondary btn-sm mt-3 hidden" onclick="requestNotificationPermission()">
+                    <i class="fas fa-bell"></i> Aktivera Notiser
+                </button>
+            </div>
         </header>
 
         <main id="app-container">
+             <section id="login-section">
+                <h2 class="text-2xl mb-6">Logga in för att fortsätta</h2>
+                <button id="login-btn" class="btn btn-primary" onclick="loginWithGoogle()">
+                    <i class="fab fa-google"></i> Logga in med Google
+                </button>
+                <p id="auth-error" class="text-red-500 mt-4 hidden"></p> </section>
 
-            <nav id="main-tabs" class="flex flex-wrap justify-center border-b-2 border-gray-700 mb-8"> <button id="tab-workout" class="tab-button active" onclick="showTab('workout')">Workout</button>
-                <button id="tab-stats" class="tab-button" onclick="showTab('stats'); renderStatistics();">Stats</button>
-                <button id="tab-progression" class="tab-button" onclick="showTab('progression')">Progression</button>
-                <button id="tab-kost" class="tab-button" onclick="showTab('kost')">Fuel & Lore</button> <button id="tab-history" class="tab-button" onclick="showTab('history'); renderHistory();">History</button>
-            </nav>
+             <div id="main-content" class="hidden">
+                <nav id="main-tabs" class="flex flex-wrap justify-center border-b-2 border-gray-700 mb-6">
+                    <button id="tab-workout" class="tab-button active" onclick="showTab('workout')">Workout</button>
+                    <button id="tab-stats" class="tab-button" onclick="showTab('stats'); renderStatistics();">Stats</button>
+                    <button id="tab-progression" class="tab-button" onclick="showTab('progression')">Progression</button>
+                    <button id="tab-kost" class="tab-button" onclick="showTab('kost')">Fuel & Lore</button>
+                    <button id="tab-history" class="tab-button" onclick="showTab('history'); renderHistory();">History</button>
+                    <button id="tab-admin" class="tab-button hidden" onclick="showTab('admin')">Admin</button>
+                </nav>
 
-            <section id="content-workout" class="tab-content active">
-                <div id="start-workout-section">
-                    <h2 class="text-2xl font-semibold mb-6 text-gray-300 text-center">Prepare for Battle!</h2>
-                    <div id="next-workout-info" class="text-center mb-8">
-                        <p class="text-xl">Next Session: <span id="next-workout-day" class="font-bold text-red-500"></span></p>
-                        <p class="text-sm text-gray-500">Last Stand Conquered.</p>
+                <section id="content-workout" class="tab-content active">
+                    <div id="start-workout-section">
+                        <h2 class="text-xl md:text-2xl font-semibold mb-4 md:mb-6 text-gray-300 text-center">Prepare for Battle!</h2>
+                        <div id="next-workout-info" class="text-center mb-6 md:mb-8">
+                            <p class="text-lg md:text-xl">Next Session: <span id="next-workout-day" class="font-bold text-red-500"></span></p>
+                            <p class="text-xs md:text-sm text-gray-500">Last Stand Conquered.</p>
+                        </div>
+                        <div class="flex flex-col sm:flex-row justify-center gap-4 md:gap-6">
+                            <button id="start-day1-btn" class="btn btn-primary"><i class="fas fa-dumbbell"></i> Start Day 1</button>
+                            <button id="start-day2-btn" class="btn btn-primary"><i class="fas fa-skull-crossbones"></i> Start Day 2</button>
+                        </div>
                     </div>
-                    <div class="flex justify-center gap-6">
-                        <button id="start-day1-btn" class="btn btn-primary" onclick="startWorkout(1)"><i class="fas fa-dumbbell"></i> Start Day 1</button>
-                        <button id="start-day2-btn" class="btn btn-primary" onclick="startWorkout(2)"><i class="fas fa-skull-crossbones"></i> Start Day 2</button>
-                    </div>
-                </div>
-                <div id="active-workout-section" class="hidden">
-                    <h2 id="active-workout-title" class="text-3xl mb-6 text-red-500 text-center"></h2>
-                    <div id="timer-section" class="text-center mb-8 hidden section-card"> <h3 class="text-xl font-medium text-gray-400 mb-3">Rest & Reload!</h3>
-                        <div id="timer-display" class="timer-display mb-4">00:00</div>
-                        <button class="btn btn-warning btn-sm" onclick="skipRest()"><i class="fas fa-forward"></i> Skip Rest</button>
-                    </div>
-                    <div id="current-exercise-section" class="hidden">
-                        <div class="section-card active-exercise-card"> <div class="flex justify-between items-center mb-4 flex-wrap">
-                                <h3 id="exercise-name" class="font-semibold text-2xl text-red-400">Exercise Name</h3>
-                                <span id="exercise-progress" class="text-sm font-medium text-gray-400">Exercise X of Y</span>
+                    <div id="active-workout-section" class="hidden">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 id="active-workout-title" class="text-2xl md:text-3xl text-red-500 text-center flex-grow"></h2>
+                            <button id="toggle-overview-btn" class="btn btn-secondary btn-sm" onclick="toggleWorkoutOverview()">
+                                <i class="fas fa-list-ul"></i> <span class="hidden md:inline ml-1">Översikt</span>
+                            </button>
+                        </div>
+                        <div id="workout-overview" class="hidden section-card mb-4">
+                             <h3 class="text-lg font-semibold mb-2 text-gray-300">Passöversikt</h3>
+                             <ul id="workout-overview-list"></ul>
+                        </div>
+                        <div id="timer-section" class="text-center mb-6 md:mb-8 hidden section-card">
+                             <h3 class="text-lg md:text-xl font-medium text-gray-400 mb-3">Rest & Reload!</h3>
+                            <div id="timer-display" class="timer-display mb-4">00:00</div>
+                            <button class="btn btn-warning btn-sm" onclick="skipRest()"><i class="fas fa-forward"></i> Skip Rest</button>
+                        </div>
+                        <div id="current-exercise-section" class="hidden">
+                            <div class="section-card active-exercise-card">
+                                <div class="flex justify-between items-start mb-3 flex-wrap">
+                                    <h3 id="exercise-name" class="font-semibold text-xl md:text-2xl text-red-400">Exercise Name</h3>
+                                    <span id="exercise-progress" class="text-xs md:text-sm font-medium text-gray-400 mt-1 md:mt-0">Exercise X of Y</span>
+                                </div>
+                                <p class="text-sm md:text-base text-gray-300 mb-1">Target: <span id="exercise-target" class="font-medium text-gray-100"></span></p>
+                                <p class="text-sm md:text-base text-gray-300 mb-3">Rest: <span id="exercise-rest" class="font-medium text-gray-100"></span></p>
+                                <div id="recommendation-container" class="mb-3"></div>
+                                <div id="sets-container" class="mt-3"></div>
+                                <p id="exercise-note" class="text-xs md:text-sm text-gray-500 mt-3"></p>
                             </div>
-                            <p class="text-gray-300 mb-2">Target: <span id="exercise-target" class="font-medium text-gray-100"></span></p>
-                            <p class="text-gray-300 mb-4">Rest: <span id="exercise-rest" class="font-medium text-gray-100"></span></p>
-                            <div id="recommendation-container" class="mb-4"></div>
-                            <div id="sets-container" class="mt-4"></div>
-                            <p id="exercise-note" class="text-sm text-gray-500 mt-4"></p>
+                            <div class="flex justify-between mt-6">
+                                 <button class="btn btn-secondary" onclick="previousExercise()" id="prev-exercise-btn"><i class="fas fa-arrow-left"></i> Prev</button>
+                                 <button class="btn btn-success" onclick="nextExercise()" id="next-exercise-btn">Next <i class="fas fa-arrow-right"></i></button>
+                            </div>
                         </div>
-                        <div class="flex justify-between mt-8">
-                             <button class="btn btn-secondary" onclick="previousExercise()" id="prev-exercise-btn"><i class="fas fa-arrow-left"></i> Prev</button>
-                             <button class="btn btn-success" onclick="nextExercise()" id="next-exercise-btn">Next <i class="fas fa-arrow-right"></i></button>
+                        <div id="workout-complete-section" class="hidden text-center section-card">
+                            <h3 class="text-3xl md:text-4xl font-bold text-green-500 mb-4">Victory!</h3>
+                            <i class="fas fa-trophy fa-2x md:fa-3x text-yellow-400 mb-4"></i>
+                            <p class="text-lg md:text-xl text-gray-300 mb-6 md:mb-8">Session <span id="completed-day" class="text-red-500"></span> Conquered!</p>
+                            <button class="btn btn-primary" onclick="finishWorkout()"><i class="fas fa-save"></i> Save & Exit</button>
                         </div>
+                         <div class="mt-8 md:mt-10 text-center">
+                             <button class="btn btn-danger" onclick="confirmAbandonWorkout()"><i class="fas fa-times-circle"></i> Abandon Session</button>
+                         </div>
                     </div>
-                    <div id="workout-complete-section" class="hidden text-center section-card">
-                        <h3 class="text-4xl font-bold text-green-500 mb-4">Victory!</h3>
-                        <i class="fas fa-trophy fa-3x text-yellow-400 mb-4"></i>
-                        <p class="text-xl text-gray-300 mb-8">Session <span id="completed-day" class="text-red-500"></span> Conquered!</p>
-                        <button class="btn btn-primary" onclick="finishWorkout()"><i class="fas fa-save"></i> Save & Exit</button>
-                    </div>
-                     <div class="mt-10 text-center">
-                         <button class="btn btn-danger" onclick="confirmAbandonWorkout()"><i class="fas fa-times-circle"></i> Abandon Session</button>
+                </section>
+
+                <section id="content-stats" class="tab-content">
+                     <h2 class="text-2xl md:text-3xl mb-4 md:mb-6 text-gray-300 text-center">Strength Progression</h2>
+                     <div class="flex justify-center mb-4 md:mb-6">
+                         <select id="stats-exercise-select" onchange="renderStatistics()">
+                             <option value="">-- Select Exercise --</option>
+                         </select>
                      </div>
-                </div>
-            </section>
-
-            <section id="content-stats" class="tab-content">
-                 <h2 class="text-3xl mb-6 text-gray-300 text-center">Strength Progression</h2>
-                 <div class="flex justify-center mb-6">
-                     <select id="stats-exercise-select" onchange="renderStatistics()">
-                         <option value="">-- Select Exercise --</option>
-                     </select>
-                 </div>
-                 <div class="chart-container">
-                     <canvas id="progressionChart"></canvas>
-                 </div>
-                 <p id="no-stats-message" class="text-center text-gray-500 hidden mt-4">No stats to display. Crush some workouts first!</p>
-            </section>
-
-            <section id="content-progression" class="tab-content">
-                 <div class="info-section">
-                    <h2 class="text-2xl mb-4 text-gray-300">Progression Rules</h2>
-                    <p class="text-sm text-gray-400 mb-4">The app suggests increases based on these ancient scrolls.</p>
-                    <ul class="list-disc space-y-3 pl-5 text-gray-400">
-                        <li><strong>Increase Weight:</strong> When hitting the top reps (e.g., 8 reps on Squats) on ALL completed sets, increase weight by ~2.5-5% (usually 2.5kg) next time. Aim for the lower rep range with the new weight.</li>
-                        <li><strong>Weeks 9-12 (Manual):</strong> Remember to adjust Squat, Bench, Press reps to 4-6 and increase weight accordingly. The app won't remind you of this specific phase shift.</li>
-                        <li><strong>Rest-Pause:</strong> On the LAST set of Squat, Bench, Deadlift, Row: after failure, rest 15-20 sec (deep breaths), then perform AMRAP with the same weight. Log reps in notes or mentally track.</li>
-                        <li><strong>AMRAP Sets (Chins):</strong> Log actual reps. The app will suggest last session's reps. Beat it!</li>
-                        <li><strong>Timed Sets (Plank):</strong> When hitting the top time (e.g., 60s) on all sets, increase difficulty next time (add weight, hold longer). No automatic suggestion here.</li>
-                    </ul>
-                 </div>
-            </section>
-
-            <section id="content-kost" class="tab-content">
-                 <div class="info-section mb-6">
-                    <h2 class="text-2xl mb-4 text-gray-300">Warrior Fuel</h2>
-                     <ul class="list-disc space-y-2 pl-5 text-gray-400">
-                         <li><strong>Protein:</strong> 1.8 - 2.2 g per kg bodyweight/day. Crucial for muscle repair.</li>
-                         <li><strong>Calorie Deficit:</strong> 300 - 500 kcal/day below maintenance for fat loss.</li>
-                         <li><strong>Timing:</strong> Spread protein intake. Post-battle meal is beneficial.</li>
-                         <li><strong>Carbs & Fats:</strong> Fill remaining calories with quality sources (oats, rice, greens, fruits, nuts, oils).</li>
-                     </ul>
-                 </div>
-                 <div class="info-section">
-                    <h2 class="text-2xl mb-4 text-gray-300">Program Lore</h2>
-                    <h3 class="text-xl text-red-400 mb-2">Exercise Choice</h3>
-                     <ul class="list-disc space-y-1 pl-5 text-gray-400 mb-4">
-                         <li>Compound lifts forge maximum power & calorie burn (aftermath included).</li>
-                         <li>Squats & Deadlifts ignite hormonal fires for fat burning & strength.</li>
-                         <li>Push/Pull balance ensures symmetrical armor plating.</li>
-                         <li>Unilateral work (Split Squats) crushes imbalances.</li>
-                     </ul>
-                      <h3 class="text-xl text-red-400 mb-2">Reps & Rest</h3>
-                     <ul class="list-disc space-y-1 pl-5 text-gray-400 mb-4">
-                         <li>6-8 reps build raw power (Type II fibers).</li>
-                         <li>8-10 reps balance power & endurance.</li>
-                         <li>10-12 reps maximize metabolic stress (growth).</li>
-                         <li>Longer rest (2-3 min) for heavy lifts = full force recovery.</li>
-                         <li>Shorter rest (60-90s) for smaller lifts = increased metabolic fury.</li>
-                     </ul>
-                      <h3 class="text-xl text-red-400 mb-2">Intensity & Volume</h3>
-                     <ul class="list-disc space-y-1 pl-5 text-gray-400 mb-4">
-                         <li>Rest-pause amplifies volume efficiently.</li>
-                         <li>Progressive Overload is the path to godhood.</li>
-                         <li>Total volume (4-10 heavy sets/muscle/week) is the proven formula.</li>
-                     </ul>
-                      <h3 class="text-xl text-red-400 mb-2">Recovery</h3>
-                     <ul class="list-disc space-y-1 pl-5 text-gray-400">
-                         <li>~48h rest per muscle group allows rebuilding.</li>
-                         <li>Sleep and stress management are paramount.</li>
-                     </ul>
-                 </div>
-            </section>
-
-             <section id="content-history" class="tab-content">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-3xl text-gray-300">Battle Log</h2>
-                    <button class="btn btn-danger btn-sm" onclick="confirmClearHistory()"><i class="fas fa-trash-alt"></i> Clear Log</button>
-                </div>
-                <div id="history-list" class="mb-6">
-                    <p id="no-history-message" class="text-gray-500 text-center">The log is empty. Go forth and conquer!</p>
-                    </div>
-                <div id="data-management" class="section-card">
-                     <h3 class="text-xl mb-4 text-gray-300">Data Management</h3>
-                     <p class="text-sm text-gray-400 mb-4">Save all your progress to a file or load a previous full backup.</p>
-                     <div class="flex flex-col sm:flex-row gap-4">
-                         <button class="btn btn-secondary" onclick="exportData()"><i class="fas fa-file-export"></i> Exportera All Data</button>
-                         <button class="btn btn-secondary" onclick="triggerImport()"><i class="fas fa-file-import"></i> Importera Data</button>
-                         <input type="file" id="import-file-input" accept=".json" onchange="importData(event)">
+                     <div class="chart-container">
+                         <canvas id="progressionChart"></canvas>
                      </div>
-                     <p class="text-xs text-gray-500 mt-4">Note: Single workout files are offered for saving after completing each session.</p>
-                </div>
-            </section>
+                     <p id="no-stats-message" class="text-center text-gray-500 hidden mt-4">No stats to display. Crush some workouts first!</p>
+                </section>
 
-        </main>
+                <section id="content-progression" class="tab-content">
+                     <div class="info-section">
+                        <h2 class="text-xl md:text-2xl mb-4 text-gray-300">Progression Rules</h2>
+                        <p class="text-xs md:text-sm text-gray-400 mb-4">The app suggests increases based on these ancient scrolls.</p>
+                        <ul class="list-disc space-y-2 md:space-y-3 pl-4 md:pl-5 text-sm md:text-base text-gray-400">
+                            <li><strong>Increase Weight:</strong> When hitting the top reps (e.g., 8 reps on Squats) on ALL completed sets, increase weight by ~2.5-5% (usually 2.5kg) next time. Aim for the lower rep range with the new weight.</li>
+                            <li><strong>Weeks 9-12 (Manual):</strong> Remember to adjust Squat, Bench, Press reps to 4-6 and increase weight accordingly. The app won't remind you of this specific phase shift.</li>
+                            <li><strong>Rest-Pause:</strong> On the LAST set of Squat, Bench, Deadlift, Row: after failure, rest 15-20 sec (deep breaths), then perform AMRAP with the same weight. Log reps in notes or mentally track.</li>
+                            <li><strong>AMRAP Sets (Chins):</strong> Log actual reps. The app will suggest last session's reps. Beat it!</li>
+                            <li><strong>Timed Sets (Plank):</strong> When hitting the top time (e.g., 60s) on all sets, increase difficulty next time (add weight, hold longer). No automatic suggestion here.</li>
+                        </ul>
+                     </div>
+                </section>
 
-        <footer class="mt-10 text-center text-sm text-gray-500 border-t border-gray-700 pt-4">
-            PWA Metal Edition v1.4 - Pain is Temporary, Glory is Forever.
+                <section id="content-kost" class="tab-content">
+                     <div class="info-section mb-4 md:mb-6">
+                        <h2 class="text-xl md:text-2xl mb-4 text-gray-300">Warrior Fuel</h2>
+                         <ul class="list-disc space-y-2 pl-4 md:pl-5 text-sm md:text-base text-gray-400">
+                             <li><strong>Protein:</strong> 1.8 - 2.2 g per kg bodyweight/day. Crucial for muscle repair.</li>
+                             <li><strong>Calorie Deficit:</strong> 300 - 500 kcal/day below maintenance for fat loss.</li>
+                             <li><strong>Timing:</strong> Spread protein intake. Post-battle meal is beneficial.</li>
+                             <li><strong>Carbs & Fats:</strong> Fill remaining calories with quality sources (oats, rice, greens, fruits, nuts, oils).</li>
+                         </ul>
+                     </div>
+                     <div class="info-section">
+                        <h2 class="text-xl md:text-2xl mb-4 text-gray-300">Program Lore</h2>
+                        <h3 class="text-lg md:text-xl text-red-400 mb-2">Exercise Choice</h3>
+                         <ul class="list-disc space-y-1 pl-4 md:pl-5 text-sm md:text-base text-gray-400 mb-4">
+                             <li>Compound lifts forge maximum power & calorie burn (aftermath included).</li>
+                             <li>Squats & Deadlifts ignite hormonal fires for fat burning & strength.</li>
+                             <li>Push/Pull balance ensures symmetrical armor plating.</li>
+                             <li>Unilateral work (Split Squats) crushes imbalances.</li>
+                         </ul>
+                          <h3 class="text-lg md:text-xl text-red-400 mb-2">Reps & Rest</h3>
+                         <ul class="list-disc space-y-1 pl-4 md:pl-5 text-sm md:text-base text-gray-400 mb-4">
+                             <li>6-8 reps build raw power (Type II fibers).</li>
+                             <li>8-10 reps balance power & endurance.</li>
+                             <li>10-12 reps maximize metabolic stress (growth).</li>
+                             <li>Longer rest (2-3 min) for heavy lifts = full force recovery.</li>
+                             <li>Shorter rest (60-90s) for smaller lifts = increased metabolic fury.</li>
+                         </ul>
+                          <h3 class="text-lg md:text-xl text-red-400 mb-2">Intensity & Volume</h3>
+                         <ul class="list-disc space-y-1 pl-4 md:pl-5 text-sm md:text-base text-gray-400 mb-4">
+                             <li>Rest-pause amplifies volume efficiently.</li>
+                             <li>Progressive Overload is the path to godhood.</li>
+                             <li>Total volume (4-10 heavy sets/muscle/week) is the proven formula.</li>
+                         </ul>
+                          <h3 class="text-lg md:text-xl text-red-400 mb-2">Recovery</h3>
+                         <ul class="list-disc space-y-1 pl-4 md:pl-5 text-sm md:text-base text-gray-400">
+                             <li>~48h rest per muscle group allows rebuilding.</li>
+                             <li>Sleep and stress management are paramount.</li>
+                         </ul>
+                     </div>
+                </section>
+
+                 <section id="content-history" class="tab-content">
+                    <div class="flex justify-between items-center mb-4 md:mb-6">
+                        <h2 class="text-2xl md:text-3xl text-gray-300">Battle Log</h2>
+                        </div>
+                    <div id="history-list" class="mb-6">
+                        <p id="no-history-message" class="text-gray-500 text-center">The log is empty. Go forth and conquer!</p>
+                        </div>
+                    </section>
+
+                <section id="content-admin" class="tab-content">
+                    <h2 class="text-2xl md:text-3xl mb-4 md:mb-6 text-gray-300 text-center">Admin View</h2>
+                    <div class="section-card">
+                        <h3 class="text-xl mb-4">View User Data</h3>
+                        <div id="admin-user-input" class="flex flex-col sm:flex-row gap-2 items-center">
+                            <label for="admin-view-email" class="text-sm text-gray-400 flex-shrink-0">User Email:</label>
+                            <input type="email" id="admin-view-email" placeholder="Enter user's email address">
+                            <button class="btn btn-secondary btn-sm" onclick="loadAdminUserData()">Load Data</button>
+                        </div>
+                        <p id="admin-error" class="text-red-500 text-sm mt-2 hidden"></p>
+                         <div id="admin-loading" class="hidden">Loading user data... <i class="fas fa-spinner fa-spin"></i></div>
+                         <div id="admin-data-display" class="mt-4 hidden">
+                             <h4 class="text-lg mb-2">Viewing data for: <span id="admin-viewing-email" class="font-bold text-yellow-400"></span></h4>
+                             <p class="text-sm mb-2">Next Workout Day: <span id="admin-next-day" class="font-bold"></span></p>
+                             <h5 class="text-md font-semibold mt-4 mb-2 text-gray-300">Workout History:</h5>
+                             <div id="admin-history-list">
+                                 <p id="admin-no-history" class="text-gray-500">No history found for this user.</p>
+                                 </div>
+                         </div>
+                    </div>
+                </section>
+
+            </div> </main>
+
+        <footer class="mt-8 md:mt-10 text-center text-xs md:text-sm text-gray-500 border-t border-gray-700 pt-4">
+            PWA Metal Edition v1.6 - Pain is Temporary, Glory is Forever.
         </footer>
     </div>
 
     <script>
         // ==========================
-        //      PROGRAM DEFINITION & STATE (No changes needed here)
+        //      FIREBASE CONFIG
+        // ==========================
+
+        // === KLISTRA IN DIN FIREBASE CONFIG HÄR ===
+        const firebaseConfig = {
+          apiKey: "YOUR_API_KEY", // Ersätt med din nyckel
+          authDomain: "YOUR_AUTH_DOMAIN", // Ersätt med din domän
+          projectId: "YOUR_PROJECT_ID", // Ersätt med ditt projekt-ID
+          storageBucket: "YOUR_STORAGE_BUCKET", // Ersätt med din bucket
+          messagingSenderId: "YOUR_MESSAGING_SENDER_ID", // Ersätt med ditt ID
+          appId: "YOUR_APP_ID" // Ersätt med ditt app-ID
+        };
+        // ==========================================
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+        // ==========================
+        //      ADMIN CONFIG
+        // ==========================
+        // Lägg till din egen e-postadress här för att aktivera admin-fliken
+        const ADMIN_EMAIL = "din.email@example.com"; // <<< VIKTIGT: ÄNDRA DENNA!
+
+        // ==========================
+        //      PROGRAM DEFINITION (Keep as is)
         // ==========================
         const program = { /* ... (Keep the same program definition as v1.1) ... */
              // Helper function to parse rep range string like "6-8"
@@ -317,20 +422,32 @@
                 }
              ]
         };
+
+        // ==========================
+        //      STATE VARIABLES (currentUser added)
+        // ==========================
+        let currentUser = null; // Håller info om inloggad användare (uid, email)
         let currentWorkout = null;
         let currentExerciseIndex = 0;
         let currentSetIndex = 0;
-        let nextWorkoutDay = 1;
-        let workoutHistory = [];
+        let nextWorkoutDay = 1; // Laddas från Firestore
+        let workoutHistory = []; // Laddas från Firestore
         let timerIntervalId = null;
         let restEndTime = null;
         let synth = null;
         let wakeLock = null;
         let progressionChart = null;
+        let adminViewingUserId = null; // Vilken användares data admin tittar på
+        let adminWorkoutHistory = []; // Separat historik för adminvyn
 
         // ==========================
-        //      DOM ELEMENTS CACHE (Keep as is)
+        //      DOM ELEMENTS CACHE (Add login/admin elements)
         // ==========================
+        const loginSection = document.getElementById('login-section');
+        const mainContent = document.getElementById('main-content');
+        const userInfo = document.getElementById('user-info');
+        const userEmailSpan = document.getElementById('user-email');
+        const authErrorP = document.getElementById('auth-error');
         const startWorkoutSection = document.getElementById('start-workout-section');
         const activeWorkoutSection = document.getElementById('active-workout-section');
         const nextWorkoutDaySpan = document.getElementById('next-workout-day');
@@ -355,7 +472,19 @@
         const statsExerciseSelect = document.getElementById('stats-exercise-select');
         const chartCanvas = document.getElementById('progressionChart');
         const noStatsMessage = document.getElementById('no-stats-message');
-        const importFileInput = document.getElementById('import-file-input');
+        const workoutOverview = document.getElementById('workout-overview');
+        const workoutOverviewList = document.getElementById('workout-overview-list');
+        const toggleOverviewBtn = document.getElementById('toggle-overview-btn');
+        const adminTab = document.getElementById('tab-admin');
+        const adminUserInput = document.getElementById('admin-user-input');
+        const adminViewEmailInput = document.getElementById('admin-view-email');
+        const adminErrorP = document.getElementById('admin-error');
+        const adminLoadingDiv = document.getElementById('admin-loading');
+        const adminDataDisplayDiv = document.getElementById('admin-data-display');
+        const adminViewingEmailSpan = document.getElementById('admin-viewing-email');
+        const adminNextDaySpan = document.getElementById('admin-next-day');
+        const adminHistoryList = document.getElementById('admin-history-list');
+        const adminNoHistoryP = document.getElementById('admin-no-history');
 
         // ==========================
         //      UTILITY FUNCTIONS (Keep as is)
@@ -366,39 +495,16 @@
             const remainingSeconds = seconds % 60;
             return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
          };
-        const saveState = () => { /* ... */
-            try {
-                localStorage.setItem('nextWorkoutDay', nextWorkoutDay);
-                localStorage.setItem('workoutHistory', JSON.stringify(workoutHistory));
-            } catch (error) {
-                console.error("Error saving state to localStorage:", error);
-                alert("Kunde inte spara data. Webbläsarens lagring kan vara full.");
-            }
-         };
-        const loadState = () => { /* ... */
-            const savedDay = localStorage.getItem('nextWorkoutDay');
-            const savedHistory = localStorage.getItem('workoutHistory');
-            nextWorkoutDay = savedDay ? parseInt(savedDay, 10) : 1;
-            if (savedHistory) {
-                try {
-                    workoutHistory = JSON.parse(savedHistory);
-                    if (!Array.isArray(workoutHistory)) workoutHistory = [];
-                } catch (error) {
-                    console.error("Error parsing workout history:", error);
-                    workoutHistory = [];
-                }
-            } else {
-                workoutHistory = [];
-            }
-            updateStartScreen();
-            populateStatsDropdown(); // Fyll i dropdown för statistik
-            renderHistory();
-         };
+        // saveState and loadState are replaced by Firestore functions
         const showTab = (tabId) => { /* ... */
-            const mainContents = document.querySelectorAll('#app-container > section.tab-content');
+            const mainContents = document.querySelectorAll('#main-content section.tab-content'); // Target sections inside #main-content
             const mainButtons = document.querySelectorAll('#main-tabs .tab-button');
             mainContents.forEach(content => content.classList.toggle('active', content.id === `content-${tabId}`));
             mainButtons.forEach(button => button.classList.toggle('active', button.id === `tab-${tabId}`));
+            if (workoutOverview && !workoutOverview.classList.contains('hidden')) {
+                 workoutOverview.classList.add('hidden');
+                 toggleOverviewBtn.innerHTML = '<i class="fas fa-list-ul"></i> <span class="hidden md:inline ml-1">Översikt</span>';
+            }
          };
         const playSound = async (note = 'C4', duration = '8n') => { /* ... */
              // Försök starta Tone.js context om det inte körs (kräver interaktion)
@@ -449,10 +555,172 @@
          };
 
         // ==========================
+        //      FIRESTORE FUNCTIONS (NEW)
+        // ==========================
+
+        // Get reference to the user's data document in Firestore
+        const getUserDocRef = (userId) => {
+            if (!userId) return null;
+            return db.collection('userData').doc(userId);
+        };
+
+        // Load user data (history and next day) from Firestore
+        const loadUserData = async () => {
+            if (!currentUser) return;
+            const userDocRef = getUserDocRef(currentUser.uid);
+            if (!userDocRef) return;
+
+            console.log("Attempting to load data for user:", currentUser.uid);
+            try {
+                const docSnap = await userDocRef.get();
+                if (docSnap.exists) {
+                    const data = docSnap.data();
+                    workoutHistory = data.workoutHistory || [];
+                    nextWorkoutDay = data.nextWorkoutDay || 1;
+                    // Ensure history is sorted after loading
+                    workoutHistory.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+                    console.log("Data loaded from Firestore:", { nextWorkoutDay, historyCount: workoutHistory.length });
+                } else {
+                    // No document yet, use defaults
+                    console.log("No existing user document found, using defaults.");
+                    workoutHistory = [];
+                    nextWorkoutDay = 1;
+                    // Optional: Create the document with defaults?
+                    // await saveUserData();
+                }
+            } catch (error) {
+                console.error("Error loading user data from Firestore:", error);
+                // Fallback to defaults or show error?
+                workoutHistory = [];
+                nextWorkoutDay = 1;
+                alert("Kunde inte ladda din data från molnet. Använder standardvärden.");
+            } finally {
+                // Update UI regardless of success/failure
+                updateStartScreen();
+                populateStatsDropdown();
+                renderHistory();
+                renderStatistics(); // Render stats based on loaded data
+            }
+        };
+
+        // Save user data (history and next day) to Firestore
+        const saveUserData = async () => {
+            if (!currentUser) return;
+            const userDocRef = getUserDocRef(currentUser.uid);
+            if (!userDocRef) return;
+
+            const dataToSave = {
+                nextWorkoutDay: nextWorkoutDay,
+                workoutHistory: workoutHistory,
+                lastUpdated: firebase.firestore.FieldValue.serverTimestamp() // Add timestamp
+            };
+
+            console.log("Attempting to save data for user:", currentUser.uid);
+            try {
+                // Use set with merge: true to create or update the document
+                await userDocRef.set(dataToSave, { merge: true });
+                console.log("User data saved successfully to Firestore.");
+            } catch (error) {
+                console.error("Error saving user data to Firestore:", error);
+                alert("Kunde inte spara data till molnet. Försök igen senare.");
+                // Optionally: Implement offline persistence/retry logic here if needed
+            }
+        };
+
+
+        // ==========================
+        //      AUTHENTICATION FUNCTIONS (NEW)
+        // ==========================
+
+        // Handle user login with Google Popup
+        const loginWithGoogle = () => {
+            authErrorP.classList.add('hidden'); // Hide previous errors
+            auth.signInWithPopup(googleProvider)
+                .then((result) => {
+                    // This gives you a Google Access Token. You can use it to access the Google API.
+                    const credential = result.credential;
+                    const token = credential.accessToken;
+                    // The signed-in user info.
+                    const user = result.user;
+                    console.log("User logged in:", user.email);
+                    // No need to explicitly call handleAuthStateChange, it's triggered automatically
+                }).catch((error) => {
+                    // Handle Errors here.
+                    const errorCode = error.code;
+                    const errorMessage = error.message;
+                    // The email of the user's account used.
+                    const email = error.email;
+                    // The firebase.auth.AuthCredential type that was used.
+                    const credential = error.credential;
+                    console.error("Login Error:", errorCode, errorMessage);
+                    authErrorP.textContent = `Inloggningsfel: ${errorMessage}`;
+                    authErrorP.classList.remove('hidden');
+                });
+        };
+
+        // Handle user logout
+        const logoutUser = () => {
+            auth.signOut().then(() => {
+                console.log("User logged out.");
+                // State will be cleared by handleAuthStateChange
+            }).catch((error) => {
+                console.error("Logout Error:", error);
+                alert("Utloggning misslyckades.");
+            });
+        };
+
+        // Listen for authentication state changes
+        const handleAuthStateChange = (user) => {
+            if (user) {
+                // User is signed in.
+                currentUser = {
+                    uid: user.uid,
+                    email: user.email
+                };
+                console.log("Auth state changed: User is logged in", currentUser.email);
+                userEmailSpan.textContent = currentUser.email;
+                userInfo.classList.remove('hidden');
+                loginSection.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+
+                // Show Admin tab if user is admin
+                adminTab.classList.toggle('hidden', user.email !== ADMIN_EMAIL);
+
+                // Load user data from Firestore
+                loadUserData();
+
+            } else {
+                // User is signed out.
+                console.log("Auth state changed: User is logged out");
+                currentUser = null;
+                // Clear local state
+                workoutHistory = [];
+                nextWorkoutDay = 1;
+                currentWorkout = null; // Reset any active workout
+                // Reset UI
+                userInfo.classList.add('hidden');
+                loginSection.classList.remove('hidden');
+                mainContent.classList.add('hidden');
+                adminTab.classList.add('hidden'); // Hide admin tab on logout
+                // Clear UI elements that depend on data
+                renderHistory();
+                populateStatsDropdown();
+                renderStatistics(); // Clear stats graph
+                updateStartScreen();
+                // Reset admin view if it was open
+                adminDataDisplayDiv.classList.add('hidden');
+                adminViewEmailInput.value = '';
+                adminErrorP.classList.add('hidden');
+                adminLoadingDiv.classList.add('hidden');
+
+            }
+        };
+
+        // ==========================
         //      PROGRESSION HELPERS (Keep as is)
         // ==========================
-        const findLastWorkoutDataForExercise = (exerciseId, targetDayIndex) => { /* ... */
-            const relevantHistory = workoutHistory.filter(w => w.dayIndex === targetDayIndex);
+        const findLastWorkoutDataForExercise = (exerciseId, targetDayIndex, historySource = workoutHistory) => { // Added historySource parameter
+            const relevantHistory = historySource.filter(w => w.dayIndex === targetDayIndex);
             for (let i = relevantHistory.length - 1; i >= 0; i--) {
                 const workout = relevantHistory[i];
                 const exerciseData = workout.exercises.find(ex => ex.id === exerciseId);
@@ -461,14 +729,14 @@
             } return null;
          };
         const getPreviousWeightSuggestion = (exerciseId, targetDayIndex) => { /* ... */
-            const lastData = findLastWorkoutDataForExercise(exerciseId, targetDayIndex);
+            const lastData = findLastWorkoutDataForExercise(exerciseId, targetDayIndex); // Uses current user's history
             if (!lastData || !lastData.firstCompletedSet) return null; const set = lastData.firstCompletedSet;
             if (set.weight !== null && set.weight !== undefined) { return typeof set.weight === 'object' ? set.weight : { L: set.weight, R: set.weight }; }
             else if (set.reps !== null && lastData.exercise.type === 'amrap') { return { reps: set.reps }; }
             else if (set.time !== null) { return typeof set.time === 'object' ? set.time : { L: set.time, R: set.time }; } return null;
          };
         const getWeightIncreaseRecommendation = (exerciseId, targetDayIndex) => { /* ... */
-            const lastData = findLastWorkoutDataForExercise(exerciseId, targetDayIndex);
+            const lastData = findLastWorkoutDataForExercise(exerciseId, targetDayIndex); // Uses current user's history
             if (!lastData || !lastData.firstCompletedSet || ['time', 'bilateral-time', 'amrap'].includes(lastData.exercise.type)) { return null; }
             const exerciseDef = program.days[targetDayIndex - 1].exercises.find(ex => ex.id === exerciseId);
             const repRange = program.parseRepRange(exerciseDef.reps);
@@ -485,7 +753,7 @@
          };
 
         // ==========================
-        //      WORKOUT LOGIC (Modify finishWorkout)
+        //      WORKOUT LOGIC (Modify finishWorkout to save to Firestore)
         // ==========================
         const startWorkout = async (dayIndex) => { /* ... */
             await playSound('E3', '4n');
@@ -494,6 +762,8 @@
             currentWorkout = { dayIndex: dayIndex, dayName: dayData.name, startTime: new Date().toISOString(), exercises: exercisesCopy };
             currentExerciseIndex = 0; currentSetIndex = 0;
             updateWorkoutView();
+            workoutOverview.classList.add('hidden');
+            toggleOverviewBtn.innerHTML = '<i class="fas fa-list-ul"></i> <span class="hidden md:inline ml-1">Översikt</span>';
             startWorkoutSection.classList.add('hidden'); activeWorkoutSection.classList.remove('hidden');
             timerSection.classList.add('hidden'); workoutCompleteSection.classList.add('hidden'); currentExerciseSection.classList.remove('hidden');
             requestWakeLock();
@@ -518,7 +788,7 @@
             nextExerciseBtn.innerHTML = (currentExerciseIndex === totalExercises - 1) ? `Finish <i class="fas fa-flag-checkered"></i>` : `Next <i class="fas fa-arrow-right"></i>`;
             nextExerciseBtn.classList.toggle('btn-success', currentExerciseIndex < totalExercises - 1);
             nextExerciseBtn.classList.toggle('btn-primary', currentExerciseIndex === totalExercises - 1);
-            const recommendation = getWeightIncreaseRecommendation(exercise.id, currentWorkout.dayIndex);
+            const recommendation = getWeightIncreaseRecommendation(exercise.id, currentWorkout.dayIndex); // Uses current user's history
             recommendationContainer.innerHTML = '';
             if (recommendation) {
                 let recText = `<i class="fas fa-bolt text-yellow-400 mr-2"></i>Recommendation: Increase to `;
@@ -528,27 +798,22 @@
                 recommendationContainer.innerHTML = `<div class="recommendation-box">${recText}</div>`;
             }
             renderSets();
+            if (!workoutOverview.classList.contains('hidden')) { renderWorkoutOverview(); }
         };
         const renderSets = () => { /* ... */
             if (!currentWorkout) return;
             setsContainer.innerHTML = '';
             const exercise = currentWorkout.exercises[currentExerciseIndex];
-            const previousData = getPreviousWeightSuggestion(exercise.id, currentWorkout.dayIndex);
+            const previousData = getPreviousWeightSuggestion(exercise.id, currentWorkout.dayIndex); // Uses current user's history
 
             exercise.setsData.forEach((setData, setIndex) => {
-                const setRow = document.createElement('div');
-                setRow.className = 'set-row';
-                const isCompleted = setData.completed;
-                const isSkipped = setData.skipped;
+                const setRow = document.createElement('div'); setRow.className = 'set-row';
+                const isCompleted = setData.completed; const isSkipped = setData.skipped;
                 const isCurrent = setIndex === currentSetIndex && !isCompleted && !isSkipped && !timerIntervalId;
                 const baseId = `ex${currentExerciseIndex}-set${setIndex}`;
-                let inputsHTML = '';
-                let suggestionHTML = '';
-                const currentWeight = setData.weight ?? '';
-                const currentReps = setData.reps ?? '';
-                const currentTime = setData.time ?? '';
+                let inputsHTML = ''; let suggestionHTML = '';
+                const currentWeight = setData.weight ?? ''; const currentReps = setData.reps ?? ''; const currentTime = setData.time ?? '';
 
-                // Logic to create inputs based on type (same as before)
                  if (exercise.type === 'reps' || exercise.type === 'amrap') {
                     let placeholderWeight = ''; let placeholderReps = '';
                     if (!isCompleted && !isSkipped && previousData?.L !== undefined) { placeholderWeight = previousData.L; suggestionHTML = `<span class="suggestion-text">(Last: ${previousData.L}kg)</span>`; }
@@ -566,14 +831,8 @@
                     if (!isCompleted && !isSkipped && previousData?.L !== undefined) { placeholderWeightL = previousData.L; suggestionL = `<span class="suggestion-text">(L: ${previousData.L}kg)</span>`; }
                     if (!isCompleted && !isSkipped && previousData?.R !== undefined) { placeholderWeightR = previousData.R; suggestionR = `<span class="suggestion-text">(R: ${previousData.R}kg)</span>`; }
                     inputsHTML = `
-                        <div class="w-full md:w-auto flex items-center gap-1 flex-wrap">
-                            <label for="${baseId}-weight-L">Wt L:</label> <input type="number" id="${baseId}-weight-L" step="0.5" min="0" ${isCompleted || isSkipped ? 'disabled' : ''} value="${currentWeight?.L ?? ''}" placeholder="${placeholderWeightL}"> ${suggestionL}
-                            <label for="${baseId}-reps-L" class="ml-2">Reps L:</label> <input type="number" id="${baseId}-reps-L" step="1" min="0" ${isCompleted || isSkipped ? 'disabled' : ''} value="${currentReps?.L ?? ''}">
-                        </div>
-                        <div class="w-full md:w-auto flex items-center gap-1 flex-wrap mt-1 md:mt-0">
-                            <label for="${baseId}-weight-R">Wt R:</label> <input type="number" id="${baseId}-weight-R" step="0.5" min="0" ${isCompleted || isSkipped ? 'disabled' : ''} value="${currentWeight?.R ?? ''}" placeholder="${placeholderWeightR}"> ${suggestionR}
-                            <label for="${baseId}-reps-R" class="ml-2">Reps R:</label> <input type="number" id="${baseId}-reps-R" step="1" min="0" ${isCompleted || isSkipped ? 'disabled' : ''} value="${currentReps?.R ?? ''}">
-                        </div>`;
+                        <div class="w-full md:w-auto flex items-center gap-1 flex-wrap"> <label for="${baseId}-weight-L">Wt L:</label> <input type="number" id="${baseId}-weight-L" step="0.5" min="0" ${isCompleted || isSkipped ? 'disabled' : ''} value="${currentWeight?.L ?? ''}" placeholder="${placeholderWeightL}"> ${suggestionL} <label for="${baseId}-reps-L" class="ml-2">Reps L:</label> <input type="number" id="${baseId}-reps-L" step="1" min="0" ${isCompleted || isSkipped ? 'disabled' : ''} value="${currentReps?.L ?? ''}"> </div>
+                        <div class="w-full md:w-auto flex items-center gap-1 flex-wrap mt-1 md:mt-0"> <label for="${baseId}-weight-R">Wt R:</label> <input type="number" id="${baseId}-weight-R" step="0.5" min="0" ${isCompleted || isSkipped ? 'disabled' : ''} value="${currentWeight?.R ?? ''}" placeholder="${placeholderWeightR}"> ${suggestionR} <label for="${baseId}-reps-R" class="ml-2">Reps R:</label> <input type="number" id="${baseId}-reps-R" step="1" min="0" ${isCompleted || isSkipped ? 'disabled' : ''} value="${currentReps?.R ?? ''}"> </div>`;
                 } else if (exercise.type === 'bilateral-time') {
                     let placeholderTimeL = '', placeholderTimeR = '', suggestionL = '', suggestionR = '';
                     if (!isCompleted && !isSkipped && previousData?.L !== undefined) { placeholderTimeL = previousData.L; suggestionL = `<span class="suggestion-text">(L: ${previousData.L}s)</span>`; }
@@ -583,169 +842,158 @@
                          <div class="w-full md:w-auto flex items-center gap-1 flex-wrap mt-1 md:mt-0"> <label for="${baseId}-time-R">Time R:</label> <input type="number" id="${baseId}-time-R" step="1" min="0" ${isCompleted || isSkipped ? 'disabled' : ''} value="${currentTime?.R ?? ''}" placeholder="${placeholderTimeR}"> ${suggestionR} </div>`;
                 }
 
-
-                let statusText = isCompleted ? 'Done' : (isSkipped ? 'Skipped' : 'Pending');
-                let statusClass = isCompleted ? 'set-complete' : (isSkipped ? 'set-skipped' : 'set-pending');
+                let statusText = isCompleted ? 'Done' : (isSkipped ? 'Skipped' : 'Pending'); let statusClass = isCompleted ? 'set-complete' : (isSkipped ? 'set-skipped' : 'set-pending');
                 let actionButtonsHTML = '';
                  if (!isCompleted && !isSkipped) {
-                     actionButtonsHTML = `
-                        <button class="btn btn-success btn-sm" onclick="logSet(${setIndex})" ${timerIntervalId ? 'disabled' : ''}><i class="fas fa-check"></i> Log</button>
-                        <button class="btn btn-warning btn-sm" onclick="skipSet(${setIndex})" ${timerIntervalId ? 'disabled' : ''}><i class="fas fa-forward"></i> Skip</button>
-                     `;
-                 } else {
-                     actionButtonsHTML = `<button class="btn btn-secondary btn-sm" onclick="resetSet(${setIndex})" ${timerIntervalId ? 'disabled' : ''}><i class="fas fa-undo"></i> Reset</button>`;
-                 }
+                     actionButtonsHTML = ` <button class="btn btn-success btn-sm" onclick="logSet(${setIndex})" ${timerIntervalId ? 'disabled' : ''}><i class="fas fa-check"></i> Log</button> <button class="btn btn-warning btn-sm" onclick="skipSet(${setIndex})" ${timerIntervalId ? 'disabled' : ''}><i class="fas fa-forward"></i> Skip</button> `;
+                 } else { actionButtonsHTML = `<button class="btn btn-secondary btn-sm" onclick="resetSet(${setIndex})" ${timerIntervalId ? 'disabled' : ''}><i class="fas fa-undo"></i> Reset</button>`; }
 
-                setRow.innerHTML = `
-                    <span class="set-info ${isCurrent ? 'text-red-500' : ''}">Set ${setIndex + 1}</span>
-                    <div class="set-inputs"> ${inputsHTML} </div>
-                    <div class="set-actions"> ${actionButtonsHTML} </div>
-                    <span class="set-status ${statusClass} text-xs md:text-sm">${statusText}</span>`;
+                setRow.innerHTML = ` <span class="set-info ${isCurrent ? 'text-red-500' : ''}">Set ${setIndex + 1}</span> <div class="set-inputs"> ${inputsHTML} </div> <div class="set-actions"> ${actionButtonsHTML} </div> <span class="set-status ${statusClass}">${statusText}</span>`;
                 setsContainer.appendChild(setRow);
             });
          };
         const logSet = (setIndex) => { /* ... */
             if (!currentWorkout || timerIntervalId) return;
-            const exercise = currentWorkout.exercises[currentExerciseIndex];
-            const setData = exercise.setsData[setIndex];
-            const baseId = `ex${currentExerciseIndex}-set${setIndex}`;
+            const exercise = currentWorkout.exercises[currentExerciseIndex]; const setData = exercise.setsData[setIndex]; const baseId = `ex${currentExerciseIndex}-set${setIndex}`;
             try {
-                if (exercise.type === 'reps' || exercise.type === 'amrap') {
-                    setData.weight = parseFloat(document.getElementById(`${baseId}-weight`).value || document.getElementById(`${baseId}-weight`).placeholder || 0);
-                    setData.reps = parseInt(document.getElementById(`${baseId}-reps`).value || document.getElementById(`${baseId}-reps`).placeholder || 0);
-                } else if (exercise.type === 'time') { setData.time = parseInt(document.getElementById(`${baseId}-time`).value || document.getElementById(`${baseId}-time`).placeholder || 0); }
-                else if (exercise.type === 'bilateral-reps') {
-                    setData.weight = { L: parseFloat(document.getElementById(`${baseId}-weight-L`).value || document.getElementById(`${baseId}-weight-L`).placeholder || 0), R: parseFloat(document.getElementById(`${baseId}-weight-R`).value || document.getElementById(`${baseId}-weight-R`).placeholder || 0) };
-                    setData.reps = { L: parseInt(document.getElementById(`${baseId}-reps-L`).value || document.getElementById(`${baseId}-reps-L`).placeholder || 0), R: parseInt(document.getElementById(`${baseId}-reps-R`).value || document.getElementById(`${baseId}-reps-R`).placeholder || 0) };
-                } else if (exercise.type === 'bilateral-time') {
-                    setData.time = { L: parseInt(document.getElementById(`${baseId}-time-L`).value || document.getElementById(`${baseId}-time-L`).placeholder || 0), R: parseInt(document.getElementById(`${baseId}-time-R`).value || document.getElementById(`${baseId}-time-R`).placeholder || 0) };
-                }
+                if (exercise.type === 'reps' || exercise.type === 'amrap') { setData.weight = parseFloat(document.getElementById(`${baseId}-weight`).value || document.getElementById(`${baseId}-weight`).placeholder || 0); setData.reps = parseInt(document.getElementById(`${baseId}-reps`).value || document.getElementById(`${baseId}-reps`).placeholder || 0); }
+                else if (exercise.type === 'time') { setData.time = parseInt(document.getElementById(`${baseId}-time`).value || document.getElementById(`${baseId}-time`).placeholder || 0); }
+                else if (exercise.type === 'bilateral-reps') { setData.weight = { L: parseFloat(document.getElementById(`${baseId}-weight-L`).value || document.getElementById(`${baseId}-weight-L`).placeholder || 0), R: parseFloat(document.getElementById(`${baseId}-weight-R`).value || document.getElementById(`${baseId}-weight-R`).placeholder || 0) }; setData.reps = { L: parseInt(document.getElementById(`${baseId}-reps-L`).value || document.getElementById(`${baseId}-reps-L`).placeholder || 0), R: parseInt(document.getElementById(`${baseId}-reps-R`).value || document.getElementById(`${baseId}-reps-R`).placeholder || 0) }; }
+                else if (exercise.type === 'bilateral-time') { setData.time = { L: parseInt(document.getElementById(`${baseId}-time-L`).value || document.getElementById(`${baseId}-time-L`).placeholder || 0), R: parseInt(document.getElementById(`${baseId}-time-R`).value || document.getElementById(`${baseId}-time-R`).placeholder || 0) }; }
                 setData.completed = true; setData.skipped = false;
             } catch (error) { console.error("Error reading input values:", error); alert("Could not read values. Check inputs."); return; }
-            currentSetIndex++;
-            const allSetsDone = exercise.setsData.every(s => s.completed || s.skipped);
+            currentSetIndex++; const allSetsDone = exercise.setsData.every(s => s.completed || s.skipped);
             if (!allSetsDone && currentSetIndex < exercise.sets) { startTimer(exercise.rest); }
-            else { renderSets(); playSound('A4', '8n'); } // Higher pitch success sound
+            else { renderSets(); playSound('A4', '8n'); if (!workoutOverview.classList.contains('hidden')) { renderWorkoutOverview(); } }
          };
         const skipSet = (setIndex) => { /* ... */
-            if (!currentWorkout || timerIntervalId) return;
-            const exercise = currentWorkout.exercises[currentExerciseIndex];
-            exercise.setsData[setIndex] = { ...exercise.setsData[setIndex], completed: false, skipped: true, weight: null, reps: null, time: null };
-            currentSetIndex++;
+            if (!currentWorkout || timerIntervalId) return; const exercise = currentWorkout.exercises[currentExerciseIndex];
+            exercise.setsData[setIndex] = { ...exercise.setsData[setIndex], completed: false, skipped: true, weight: null, reps: null, time: null }; currentSetIndex++;
             const allSetsDone = exercise.setsData.every(s => s.completed || s.skipped);
             if (!allSetsDone && currentSetIndex < exercise.sets) { startTimer(exercise.rest); }
-            else { renderSets(); playSound('E3', '4n'); } // Low skip sound
+            else { renderSets(); playSound('E3', '4n'); if (!workoutOverview.classList.contains('hidden')) { renderWorkoutOverview(); } }
          };
         const resetSet = (setIndex) => { /* ... */
-             if (!currentWorkout || timerIntervalId) return;
-             const exercise = currentWorkout.exercises[currentExerciseIndex];
+             if (!currentWorkout || timerIntervalId) return; const exercise = currentWorkout.exercises[currentExerciseIndex];
              exercise.setsData[setIndex] = { ...exercise.setsData[setIndex], completed: false, skipped: false, weight: null, reps: null, time: null };
-             const firstPendingIndex = exercise.setsData.findIndex(s => !s.completed && !s.skipped);
-             currentSetIndex = (firstPendingIndex !== -1) ? firstPendingIndex : 0;
-             renderSets();
-             playSound('C3', '8n'); // Low reset sound
+             const firstPendingIndex = exercise.setsData.findIndex(s => !s.completed && !s.skipped); currentSetIndex = (firstPendingIndex !== -1) ? firstPendingIndex : 0;
+             renderSets(); playSound('C3', '8n'); if (!workoutOverview.classList.contains('hidden')) { renderWorkoutOverview(); }
          };
         const startTimer = (durationInSeconds) => { /* ... */
-            if (timerIntervalId) clearInterval(timerIntervalId);
-            restEndTime = Date.now() + durationInSeconds * 1000;
+            if (timerIntervalId) clearInterval(timerIntervalId); restEndTime = Date.now() + durationInSeconds * 1000;
             timerSection.classList.remove('hidden'); currentExerciseSection.classList.add('hidden'); renderSets();
             const update = () => {
-                const now = Date.now(); const timeLeft = Math.max(0, Math.round((restEndTime - now) / 1000));
-                timerDisplay.textContent = formatTime(timeLeft);
-                if (timeLeft <= 0) {
-                    clearInterval(timerIntervalId); timerIntervalId = null;
-                    timerSection.classList.add('hidden'); currentExerciseSection.classList.remove('hidden');
-                    playSound('G4', '4n'); // Timer end sound
-                    vibrateDevice([200, 100, 200]); showWorkoutNotification('Metal Workout', 'Rest Over! Engage!'); renderSets();
-                } else if (timeLeft <= 3 && timeLeft > 0) { playSound('F#4', '16n'); vibrateDevice([50]); } // Countdown sound
-            };
-            update(); timerIntervalId = setInterval(update, 1000);
+                const now = Date.now(); const timeLeft = Math.max(0, Math.round((restEndTime - now) / 1000)); timerDisplay.textContent = formatTime(timeLeft);
+                if (timeLeft <= 0) { clearInterval(timerIntervalId); timerIntervalId = null; timerSection.classList.add('hidden'); currentExerciseSection.classList.remove('hidden'); playSound('G4', '4n'); vibrateDevice([200, 100, 200]); showWorkoutNotification('Metal Workout', 'Rest Over! Engage!'); renderSets(); }
+                else if (timeLeft <= 3 && timeLeft > 0) { playSound('F#4', '16n'); vibrateDevice([50]); }
+            }; update(); timerIntervalId = setInterval(update, 1000);
          };
         const skipRest = () => { /* ... */
-            if (timerIntervalId) {
-                clearInterval(timerIntervalId); timerIntervalId = null;
-                timerSection.classList.add('hidden'); currentExerciseSection.classList.remove('hidden');
-                playSound('D#4', '8n'); vibrateDevice([100]); renderSets();
-            }
+            if (timerIntervalId) { clearInterval(timerIntervalId); timerIntervalId = null; timerSection.classList.add('hidden'); currentExerciseSection.classList.remove('hidden'); playSound('D#4', '8n'); vibrateDevice([100]); renderSets(); }
          };
         const nextExercise = () => { /* ... */
-            if (!currentWorkout || timerIntervalId) return;
-            const allSetsDone = currentWorkout.exercises[currentExerciseIndex].setsData.every(s => s.completed || s.skipped);
+            if (!currentWorkout || timerIntervalId) return; const allSetsDone = currentWorkout.exercises[currentExerciseIndex].setsData.every(s => s.completed || s.skipped);
             if (!allSetsDone && !confirm("Not all sets logged. Proceed anyway?")) return;
-            if (currentExerciseIndex < currentWorkout.exercises.length - 1) {
-                currentExerciseIndex++; currentSetIndex = 0; updateWorkoutView(); playSound('F4'); // Next exercise sound
-            } else {
-                currentExerciseSection.classList.add('hidden'); workoutCompleteSection.classList.remove('hidden');
-                completedDaySpan.textContent = currentWorkout.dayIndex; playSound('C5', '2n'); // Victory sound
-            }
+            if (currentExerciseIndex < currentWorkout.exercises.length - 1) { currentExerciseIndex++; currentSetIndex = 0; updateWorkoutView(); playSound('F4'); }
+            else { currentExerciseSection.classList.add('hidden'); workoutCompleteSection.classList.remove('hidden'); completedDaySpan.textContent = currentWorkout.dayIndex; playSound('C5', '2n'); workoutOverview.classList.add('hidden'); toggleOverviewBtn.innerHTML = '<i class="fas fa-list-ul"></i> <span class="hidden md:inline ml-1">Översikt</span>'; }
          };
         const previousExercise = () => { /* ... */
              if (!currentWorkout || timerIntervalId || currentExerciseIndex === 0) return;
-             if (workoutCompleteSection.classList.contains('active')) { workoutCompleteSection.classList.add('hidden'); currentExerciseSection.classList.remove('hidden'); }
-             else { currentExerciseIndex--; }
-             const firstPendingIndex = currentWorkout.exercises[currentExerciseIndex].setsData.findIndex(s => !s.completed && !s.skipped);
-             currentSetIndex = (firstPendingIndex !== -1) ? firstPendingIndex : 0;
-             updateWorkoutView(); playSound('D4'); // Prev exercise sound
+             if (workoutCompleteSection.classList.contains('active')) { workoutCompleteSection.classList.add('hidden'); currentExerciseSection.classList.remove('hidden'); } else { currentExerciseIndex--; }
+             const firstPendingIndex = currentWorkout.exercises[currentExerciseIndex].setsData.findIndex(s => !s.completed && !s.skipped); currentSetIndex = (firstPendingIndex !== -1) ? firstPendingIndex : 0;
+             updateWorkoutView(); playSound('D4');
          };
-        const confirmAbandonWorkout = () => { if (confirm("Abandon session? Data will be lost!")) { abandonWorkout(); } };
+        const confirmAbandonWorkout = () => { if (confirm("Abandon session? Progress will not be saved!")) { abandonWorkout(); } }; // Tydligare varning
         const abandonWorkout = () => { /* ... */
             if (timerIntervalId) clearInterval(timerIntervalId); timerIntervalId = null;
             currentWorkout = null; currentExerciseIndex = 0; currentSetIndex = 0;
             activeWorkoutSection.classList.add('hidden'); startWorkoutSection.classList.remove('hidden');
-            updateStartScreen(); releaseWakeLock(); playSound('C2', '1n'); // Low abandon sound
-         };
+            workoutOverview.classList.add('hidden'); toggleOverviewBtn.innerHTML = '<i class="fas fa-list-ul"></i> <span class="hidden md:inline ml-1">Översikt</span>';
+            updateStartScreen(); releaseWakeLock(); playSound('C2', '1n');
+        };
 
-        // MODIFIED finishWorkout function
-        const finishWorkout = () => {
+        // MODIFIED finishWorkout to save to Firestore
+        const finishWorkout = async () => { // Added async
             if (!currentWorkout) return;
 
-            // Spara passet internt först
+            // Spara passet lokalt i state först
             currentWorkout.endTime = new Date().toISOString();
-            const finishedWorkoutData = JSON.parse(JSON.stringify(currentWorkout)); // Skapa en kopia för export
-            workoutHistory.push(finishedWorkoutData); // Spara kopian i historiken
+            const finishedWorkoutData = JSON.parse(JSON.stringify(currentWorkout)); // Skapa en kopia
+            workoutHistory.push(finishedWorkoutData);
             nextWorkoutDay = currentWorkout.dayIndex === 1 ? 2 : 1;
-            saveState(); // Spara den uppdaterade historiken och nästa dag till localStorage
 
-            // Fråga om användaren vill exportera just detta pass
-            if (confirm("Passet är sparat internt. Vill du även spara detta enskilda pass som en separat fil?")) {
-                exportSingleWorkout(finishedWorkoutData); // Exportera bara det avslutade passet
-            }
+            // Spara den uppdaterade historiken och nästa dag till Firestore
+            await saveUserData(); // Wait for save to complete
 
             // Återställ state och UI
             const lastDay = currentWorkout.dayIndex;
             currentWorkout = null; currentExerciseIndex = 0; currentSetIndex = 0;
             workoutCompleteSection.classList.add('hidden'); activeWorkoutSection.classList.add('hidden');
             startWorkoutSection.classList.remove('hidden');
+            workoutOverview.classList.add('hidden');
+            toggleOverviewBtn.innerHTML = '<i class="fas fa-list-ul"></i> <span class="hidden md:inline ml-1">Översikt</span>';
             updateStartScreen();
-            populateStatsDropdown(); // Uppdatera statistik-dropdown direkt
-            renderHistory(); // Uppdatera historikvyn
-            showTab('history'); // Byt till historikfliken som bekräftelse
+            populateStatsDropdown();
+            renderHistory();
+            showTab('history');
             releaseWakeLock();
-            showWorkoutNotification('Metal Workout', `Session ${lastDay} Conquered & Saved Internally!`);
+            showWorkoutNotification('Metal Workout', `Session ${lastDay} Conquered & Saved to Cloud!`);
         };
 
         const updateStartScreen = () => { /* ... */
             nextWorkoutDaySpan.textContent = `Dag ${nextWorkoutDay}`;
             const btn1 = document.getElementById('start-day1-btn'); const btn2 = document.getElementById('start-day2-btn');
-            btn1.classList.toggle('ring-2', nextWorkoutDay === 1); btn1.classList.toggle('ring-offset-2', nextWorkoutDay === 1); btn1.classList.toggle('ring-red-500', nextWorkoutDay === 1); // Red ring
-            btn2.classList.toggle('ring-2', nextWorkoutDay === 2); btn2.classList.toggle('ring-offset-2', nextWorkoutDay === 2); btn2.classList.toggle('ring-red-500', nextWorkoutDay === 2); // Red ring
+            btn1.classList.toggle('ring-2', nextWorkoutDay === 1); btn1.classList.toggle('ring-offset-2', nextWorkoutDay === 1); btn1.classList.toggle('ring-red-500', nextWorkoutDay === 1);
+            btn2.classList.toggle('ring-2', nextWorkoutDay === 2); btn2.classList.toggle('ring-offset-2', nextWorkoutDay === 2); btn2.classList.toggle('ring-red-500', nextWorkoutDay === 2);
          };
 
         // ==========================
-        //      HISTORY LOGIC (Keep as is)
+        //      WORKOUT OVERVIEW (Keep as is)
         // ==========================
-        const renderHistory = () => { /* ... */
-            historyList.innerHTML = '';
-            if (workoutHistory.length === 0) { noHistoryMessage.classList.remove('hidden'); return; }
-            noHistoryMessage.classList.add('hidden');
-            [...workoutHistory].reverse().forEach((workout) => {
-                const entryDiv = document.createElement('div'); entryDiv.className = 'history-entry';
-                const startTime = new Date(workout.startTime); const endTime = workout.endTime ? new Date(workout.endTime) : null;
+        const toggleWorkoutOverview = () => { /* ... */
+            if (!currentWorkout) return; const isHidden = workoutOverview.classList.toggle('hidden');
+            if (!isHidden) { renderWorkoutOverview(); toggleOverviewBtn.innerHTML = '<i class="fas fa-times"></i> <span class="hidden md:inline ml-1">Dölj</span>'; }
+            else { toggleOverviewBtn.innerHTML = '<i class="fas fa-list-ul"></i> <span class="hidden md:inline ml-1">Översikt</span>'; }
+         };
+        const renderWorkoutOverview = () => { /* ... */
+            if (!currentWorkout || !workoutOverviewList) return; workoutOverviewList.innerHTML = '';
+            currentWorkout.exercises.forEach((exercise, index) => {
+                const li = document.createElement('li'); const isCurrent = index === currentExerciseIndex;
+                const isCompleted = exercise.setsData.every(s => s.completed || s.skipped);
+                const isSkipped = !isCompleted && exercise.setsData.some(s => s.skipped);
+                li.textContent = `${index + 1}. ${exercise.name}`; if (isCurrent) { li.classList.add('current-exercise'); }
+                const icon = document.createElement('i'); icon.classList.add('fas', 'status-icon');
+                if (isCompleted) { icon.classList.add('fa-check-circle'); }
+                else if (isSkipped && index < currentExerciseIndex) { icon.classList.add('fa-times-circle'); }
+                else if (isCurrent) { icon.classList.add('fa-spinner', 'fa-spin'); }
+                li.appendChild(icon); workoutOverviewList.appendChild(li);
+            });
+         };
+
+        // ==========================
+        //      HISTORY LOGIC (Render based on provided history)
+        // ==========================
+        // Modified renderHistory to accept history data as parameter
+        const renderHistory = (historyData = workoutHistory, targetListElement = historyList, noHistoryElement = noHistoryMessage, isAdminView = false) => {
+            targetListElement.innerHTML = ''; // Clear the target list
+            if (!historyData || historyData.length === 0) {
+                noHistoryElement.classList.remove('hidden');
+                return;
+            }
+            noHistoryElement.classList.add('hidden');
+
+            // Sort by startTime descending to show newest first
+            [...historyData].sort((a, b) => new Date(b.startTime) - new Date(a.startTime)).forEach((workout) => {
+                const entryDiv = document.createElement('div');
+                // Add specific class for admin view styling
+                entryDiv.className = `history-entry ${isAdminView ? 'admin-history-entry' : ''}`;
+                const startTime = new Date(workout.startTime);
+                const endTime = workout.endTime ? new Date(workout.endTime) : null;
                 const duration = endTime ? Math.round((endTime - startTime) / (1000 * 60)) : 'N/A';
                 let exercisesHTML = '<ul class="list-none mt-2 space-y-1">';
                 workout.exercises.forEach(ex => {
                     if (ex.setsData.some(s => s.completed || s.skipped)) {
-                        exercisesHTML += `<li class="history-exercise text-sm"><strong class="text-gray-200">${ex.name}:</strong> `; // Ljusare strong
+                        exercisesHTML += `<li class="history-exercise text-sm"><strong class="text-gray-200">${ex.name}:</strong> `;
                         let setsSummary = ex.setsData.map((s) => {
                             if (s.completed) {
                                 let e1RM = 0;
@@ -756,9 +1004,9 @@
                                 else if (ex.type === 'time') setText = `${s.time}s`;
                                 else if (ex.type === 'bilateral-reps') setText = `L:${s.weight.L}x${s.reps.L} / R:${s.weight.R}x${s.reps.R}`;
                                 else if (ex.type === 'bilateral-time') setText = `L:${s.time.L}s / R:${s.time.R}s`;
-                                if (e1RM > 0) { setText += ` <span class="text-gray-400">(~${e1RM.toFixed(1)}kg e1RM)</span>`; } // Dimma e1RM lite
+                                if (e1RM > 0) { setText += ` <span class="text-gray-400">(~${e1RM.toFixed(1)}kg e1RM)</span>`; }
                                 return setText;
-                            } else if (s.skipped) { return `<span class="text-yellow-500">(Skipped)</span>`; } // Tydligare skipped
+                            } else if (s.skipped) { return `<span class="text-yellow-500">(Skipped)</span>`; }
                             return null;
                         }).filter(s => s !== null).join(', ');
                         exercisesHTML += `${setsSummary}</li>`;
@@ -768,22 +1016,18 @@
                     <h4 class="text-xl font-semibold">${workout.dayName}</h4>
                     <p class="text-xs text-gray-400">Date: ${startTime.toLocaleDateString('sv-SE')} ${startTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })} | Duration: ${endTime ? `${duration} min` : '(Incomplete)'}</p>
                     ${exercisesHTML}`;
-                historyList.appendChild(entryDiv);
+                targetListElement.appendChild(entryDiv);
             });
         };
-        const confirmClearHistory = () => { if (confirm("Really clear the ENTIRE Battle Log? This cannot be undone!")) { clearHistory(); } };
-        const clearHistory = () => { /* ... */
-            workoutHistory = []; nextWorkoutDay = 1;
-            saveState(); renderHistory(); updateStartScreen(); populateStatsDropdown(); renderStatistics();
-            playSound('G2', '1n'); // Very low clear sound
-         };
+        // Clear history is removed - data managed in Firestore
 
         // ==========================
-        //      STATISTICS LOGIC (Keep as is)
+        //      STATISTICS LOGIC (Render based on provided history)
         // ==========================
-        const populateStatsDropdown = () => { /* ... */
+        // Modified populateStatsDropdown to accept history data
+        const populateStatsDropdown = (historyData = workoutHistory) => {
              const exerciseNames = new Set();
-            workoutHistory.forEach(workout => {
+            historyData.forEach(workout => {
                 workout.exercises.forEach(ex => {
                     if (ex.setsData.some(s => s.completed && (s.weight !== null && s.weight !== undefined))) {
                          exerciseNames.add(JSON.stringify({id: ex.id, name: ex.name}));
@@ -800,17 +1044,19 @@
              else if (sortedExercises.length > 0) { statsExerciseSelect.value = sortedExercises[0].id; }
              else { statsExerciseSelect.value = ""; }
          };
-        const renderStatistics = () => { /* ... */
+         // Modified renderStatistics to accept history data
+        const renderStatistics = (historyData = workoutHistory) => {
             const selectedExerciseId = statsExerciseSelect.value;
             const ctx = chartCanvas.getContext('2d');
             if (progressionChart) { progressionChart.destroy(); progressionChart = null; }
 
-            if (!selectedExerciseId || workoutHistory.length === 0) {
+            if (!selectedExerciseId || historyData.length === 0) {
                 noStatsMessage.classList.remove('hidden'); chartCanvas.classList.add('hidden'); return;
             }
 
             const labels = []; const maxWeightData = []; const estimated1RMData = [];
-            workoutHistory.forEach(workout => {
+            // Ensure data is sorted chronologically for the chart
+            [...historyData].sort((a, b) => new Date(a.startTime) - new Date(b.startTime)).forEach(workout => {
                 const exerciseData = workout.exercises.find(ex => ex.id === selectedExerciseId);
                 if (exerciseData) {
                     let sessionMaxWeight = 0; let sessionMaxE1RM = 0;
@@ -825,9 +1071,10 @@
                         }
                     });
                     if (sessionMaxWeight > 0) {
-                         const existingIndex = labels.indexOf(sessionDate);
-                         if (existingIndex !== -1) { maxWeightData[existingIndex] = Math.max(maxWeightData[existingIndex], sessionMaxWeight); estimated1RMData[existingIndex] = Math.max(estimated1RMData[existingIndex], sessionMaxE1RM); }
-                         else { labels.push(sessionDate); maxWeightData.push(sessionMaxWeight); estimated1RMData.push(sessionMaxE1RM); }
+                         // Don't check for duplicate dates here, allow multiple points per date if needed
+                         labels.push(sessionDate);
+                         maxWeightData.push(sessionMaxWeight);
+                         estimated1RMData.push(sessionMaxE1RM);
                     }
                 }
             });
@@ -835,140 +1082,94 @@
             if (labels.length === 0) { noStatsMessage.classList.remove('hidden'); chartCanvas.classList.add('hidden'); return; }
             noStatsMessage.classList.add('hidden'); chartCanvas.classList.remove('hidden');
 
-            // Chart.js Global Defaults for Dark Theme
-            Chart.defaults.color = '#9ca3af'; // Default text color (axes, labels)
-            Chart.defaults.borderColor = '#4b5563'; // Default border color (grid lines)
-
+            Chart.defaults.color = '#9ca3af'; Chart.defaults.borderColor = '#4b5563';
             progressionChart = new Chart(ctx, {
                 type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Max Weight (kg)', data: maxWeightData,
-                        borderColor: '#f87171', backgroundColor: 'rgba(248, 113, 113, 0.5)', // Ljusare röd
-                        tension: 0.1, yAxisID: 'yWeight', borderWidth: 2, pointBackgroundColor: '#f87171', pointRadius: 4,
-                    }, {
-                        label: 'Est. 1RM (kg)', data: estimated1RMData,
-                        borderColor: '#60a5fa', backgroundColor: 'rgba(96, 165, 250, 0.5)', // Ljusblå
-                        tension: 0.1, yAxisID: 'y1RM', borderWidth: 2, pointBackgroundColor: '#60a5fa', pointRadius: 4,
-                        hidden: false // Visa båda som standard nu
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false, },
-                    plugins: {
-                        title: { display: true, text: `Progress: ${statsExerciseSelect.options[statsExerciseSelect.selectedIndex].text}`, color: '#f3f4f6', font: { size: 16, family: "'Metal Mania', cursive" } }, // Titel färg och font
-                        legend: { labels: { color: '#e5e7eb' } }, // Legend text färg
-                        tooltip: {
-                             backgroundColor: 'rgba(0, 0, 0, 0.8)', titleColor: '#f3f4f6', bodyColor: '#e5e7eb',
-                             callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.y !== null) { label += context.parsed.y.toFixed(1) + ' kg'; } return label; } }
-                        }
-                    },
-                    scales: {
-                        x: { title: { display: true, text: 'Date', color: '#9ca3af' }, grid: { color: '#374151' }, ticks: { color: '#9ca3af' } }, // X-axel färg
-                        yWeight: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Max Weight (kg)', color: '#f87171' }, beginAtZero: true, grid: { color: '#374151' }, ticks: { color: '#f87171' } }, // Y-axel vikt färg
-                        y1RM: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'Est. 1RM (kg)', color: '#60a5fa' }, beginAtZero: true, grid: { drawOnChartArea: false, }, ticks: { color: '#60a5fa' } } // Y-axel 1RM färg
-                    }
-                }
+                data: { labels: labels, datasets: [ { label: 'Max Weight (kg)', data: maxWeightData, borderColor: '#f87171', backgroundColor: 'rgba(248, 113, 113, 0.5)', tension: 0.1, yAxisID: 'yWeight', borderWidth: 2, pointBackgroundColor: '#f87171', pointRadius: 4, }, { label: 'Est. 1RM (kg)', data: estimated1RMData, borderColor: '#60a5fa', backgroundColor: 'rgba(96, 165, 250, 0.5)', tension: 0.1, yAxisID: 'y1RM', borderWidth: 2, pointBackgroundColor: '#60a5fa', pointRadius: 4, hidden: false } ] },
+                options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false, }, plugins: { title: { display: true, text: `Progress: ${statsExerciseSelect.options[statsExerciseSelect.selectedIndex].text}`, color: '#f3f4f6', font: { size: 14, family: "'Metal Mania', cursive" } }, legend: { labels: { color: '#e5e7eb', font: {size: 10} } }, tooltip: { backgroundColor: 'rgba(0, 0, 0, 0.8)', titleColor: '#f3f4f6', bodyColor: '#e5e7eb', callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.y !== null) { label += context.parsed.y.toFixed(1) + ' kg'; } return label; } } } }, scales: { x: { title: { display: true, text: 'Date', color: '#9ca3af' }, grid: { color: '#374151' }, ticks: { color: '#9ca3af', font: {size: 10} } }, yWeight: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Max Wt (kg)', color: '#f87171' }, beginAtZero: true, grid: { color: '#374151' }, ticks: { color: '#f87171', font: {size: 10} } }, y1RM: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'e1RM (kg)', color: '#60a5fa' }, beginAtZero: true, grid: { drawOnChartArea: false, }, ticks: { color: '#60a5fa', font: {size: 10} } } } }
             });
          };
 
         // ==========================
-        //      DATA EXPORT/IMPORT (Modify exportData, add exportSingleWorkout)
+        //      ADMIN FUNCTIONS (NEW)
         // ==========================
 
-        // Funktion för att exportera ALL data som JSON-fil
-        const exportData = () => {
-            if (workoutHistory.length === 0 && nextWorkoutDay === 1) {
-                alert("Ingen data att exportera."); return;
-            }
-            const dataToExport = { nextWorkoutDay: nextWorkoutDay, workoutHistory: workoutHistory, exportedAt: new Date().toISOString() };
-            const dataStr = JSON.stringify(dataToExport, null, 2);
-            const dataBlob = new Blob([dataStr], {type: "application/json"});
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.setAttribute('href', url);
-            const dateStr = new Date().toISOString().slice(0, 10);
-            link.setAttribute('download', `metal_workout_ALL_DATA_${dateStr}.json`); // Tydligare filnamn för all data
-            document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
-            alert("All data exporterad! Spara filen på ett säkert ställe.");
-            playSound('B4');
-        };
-
-        // NY Funktion för att exportera ETT enskilt pass
-        const exportSingleWorkout = (workoutData) => {
-            if (!workoutData) {
-                console.error("No workout data provided to exportSingleWorkout");
+        // Function to load data for a specific user (by email) in the admin view
+        const loadAdminUserData = async () => {
+            const targetEmail = adminViewEmailInput.value.trim();
+            if (!targetEmail) {
+                adminErrorP.textContent = "Ange en e-postadress.";
+                adminErrorP.classList.remove('hidden');
                 return;
             }
-            // Skapa ett objekt som bara innehåller detta pass och en tidsstämpel
-            const dataToExport = {
-                singleWorkout: workoutData, // Kapsla in det i ett objekt för tydlighet
-                exportedAt: new Date().toISOString()
-            };
 
-            const dataStr = JSON.stringify(dataToExport, null, 2); // Pretty print
-            const dataBlob = new Blob([dataStr], {type: "application/json"});
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.setAttribute('href', url);
+            adminErrorP.classList.add('hidden');
+            adminDataDisplayDiv.classList.add('hidden');
+            adminLoadingDiv.classList.remove('hidden');
+            adminWorkoutHistory = []; // Clear previous admin view data
 
-            // Skapa ett mer specifikt filnamn med datum och tid
-            const startTime = new Date(workoutData.startTime);
-            const dateStr = startTime.toISOString().slice(0, 10); // YYYY-MM-DD
-            const timeStr = startTime.toTimeString().slice(0, 8).replace(/:/g, ''); // HHMMSS
-            link.setAttribute('download', `metal_workout_pass_${dateStr}_${timeStr}.json`);
+            console.log(`Admin attempting to load data for email: ${targetEmail}`);
 
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
+            try {
+                // Find user by email (Requires Firestore query, might need specific rules/indexing)
+                // Note: Querying by email directly in Firestore can be inefficient or require specific setup.
+                // A better approach in a real app might be to store user profiles with email and query that,
+                // or have an admin backend function. For simplicity here, we assume we can find the UID somehow
+                // or that the admin knows the UID. Let's *simulate* finding the user document based on email
+                // by querying the userData collection. This might require Firestore rules allowing admin read access.
 
-            console.log(`Workout from ${startTime.toLocaleString()} offered for download.`);
-            // Ingen alert här, eftersom användaren aktivt valde att spara
-        };
+                // **Important Security Note:** Allowing direct query by email might expose user UIDs if rules aren't strict.
+                // A safer approach involves a Cloud Function or dedicated admin interface.
+                // This implementation is simplified for demonstration.
 
+                // Attempt to find the user document matching the email.
+                // We'll assume the document ID is the user's UID and we store the email inside the document.
+                // This requires reading potentially many documents if not indexed properly.
+                // A direct lookup by UID is much more efficient if the admin knows the UID.
 
-        // Funktion för att trigga den dolda filinputen (oförändrad)
-        const triggerImport = () => {
-            if (currentWorkout) { alert("Avsluta eller avbryt pågående pass innan du importerar data."); return; }
-            if (confirm("Importering kommer att skriva över nuvarande historik och nästa pass. Är du säker på att du vill fortsätta? (Använd endast filer exporterade med 'Exportera All Data')")) {
-                importFileInput.click();
+                // Let's try a query (might fail depending on Firestore rules and indexing)
+                const usersRef = db.collection('userData');
+                // We need the UID, not the email directly, to fetch the doc.
+                // This part is tricky without a proper user lookup system.
+                // **Simplification:** Let's assume the admin *enters the UID* instead of email for now.
+                // We'll change the input field label later if needed.
+                // Let's pretend the input is for UID for now.
+                const targetUserId = targetEmail; // Assuming input is UID for now
+
+                const userDocRef = getUserDocRef(targetUserId);
+                if (!userDocRef) {
+                    throw new Error("Invalid User ID format.");
+                }
+
+                const docSnap = await userDocRef.get();
+
+                if (docSnap.exists) {
+                    const data = docSnap.data();
+                    adminWorkoutHistory = data.workoutHistory || [];
+                    const adminNextDay = data.nextWorkoutDay || 1;
+                    // Sort history
+                    adminWorkoutHistory.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+
+                    console.log(`Admin loaded data for UID ${targetUserId}:`, { adminNextDay, historyCount: adminWorkoutHistory.length });
+
+                    // Display the data
+                    adminViewingEmailSpan.textContent = targetUserId; // Show UID for now
+                    adminNextDaySpan.textContent = `Dag ${adminNextDay}`;
+                    renderHistory(adminWorkoutHistory, adminHistoryList, adminNoHistoryP, true); // Render in admin list
+                    adminDataDisplayDiv.classList.remove('hidden');
+                } else {
+                    console.log(`No data found for UID: ${targetUserId}`);
+                    adminErrorP.textContent = `Ingen data hittades för användar-ID: ${targetUserId}`;
+                    adminErrorP.classList.remove('hidden');
+                }
+
+            } catch (error) {
+                console.error("Error loading admin user data:", error);
+                adminErrorP.textContent = `Fel vid hämtning av data: ${error.message}`;
+                adminErrorP.classList.remove('hidden');
+            } finally {
+                adminLoadingDiv.classList.add('hidden');
             }
-        };
-
-        // Funktion för att importera data från vald JSON-fil (oförändrad, importerar ALL data)
-        const importData = (event) => {
-            const file = event.target.files[0];
-            if (!file) { return; }
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const importedData = JSON.parse(e.target.result);
-                    // Validera att det är en fullständig export (inte en enskild pass-export)
-                    if (typeof importedData === 'object' && importedData !== null &&
-                        typeof importedData.nextWorkoutDay === 'number' &&
-                        Array.isArray(importedData.workoutHistory))
-                    {
-                        nextWorkoutDay = importedData.nextWorkoutDay;
-                        workoutHistory = importedData.workoutHistory;
-                        saveState();
-                        updateStartScreen(); populateStatsDropdown(); renderStatistics(); renderHistory();
-                        alert("Data importerad framgångsrikt!"); playSound('C5');
-                    } else if (importedData.singleWorkout) {
-                         alert("Fel: Detta verkar vara en fil för ett enskilt pass. Använd 'Exportera All Data'-filen för att importera hela historiken.");
-                         throw new Error("Attempted to import single workout file using full import function.");
-                    }
-                    else { throw new Error("Ogiltigt filformat eller saknad data."); }
-                } catch (error) {
-                    console.error("Error importing data:", error);
-                    alert(`Fel vid importering: ${error.message}\n\nSe till att du valt rätt JSON-fil (exporterad med 'Exportera All Data').`);
-                    playSound('C3', '2n');
-                } finally { event.target.value = null; }
-            };
-            reader.onerror = function(e) { console.error("Error reading file:", e); alert("Kunde inte läsa filen."); playSound('C3', '2n'); event.target.value = null; };
-            reader.readAsText(file);
         };
 
 
@@ -989,15 +1190,25 @@
          };
 
         // ==========================
-        //      INITIALIZATION (Keep as is)
+        //      INITIALIZATION (Add Auth Listener)
         // ==========================
         document.addEventListener('DOMContentLoaded', () => {
-            loadState();
-            showTab('workout');
-            updateStartScreen();
-            renderStatistics(); // Render initial chart if possible
-            if ('Notification' in window && Notification.permission === 'default') { notificationsBtn.classList.remove('hidden'); }
-            registerServiceWorker();
+            // Listen for auth state changes BEFORE trying to load data
+            auth.onAuthStateChanged(handleAuthStateChange);
+
+            // Don't load data here initially, wait for auth state change
+            // loadState(); // Removed - handled by onAuthStateChanged
+
+            showTab('workout'); // Default tab (will be hidden if not logged in)
+            // updateStartScreen(); // Handled by loadUserData
+            // renderStatistics(); // Handled by loadUserData
+
+             // Check notification permission (can be done before login)
+            if ('Notification' in window && Notification.permission === 'default') {
+                notificationsBtn.classList.remove('hidden');
+            }
+
+            registerServiceWorker(); // Registrera SW
         });
 
     </script>

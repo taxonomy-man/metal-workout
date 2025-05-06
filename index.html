@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1f2937"/> <link rel="manifest" href="manifest.json"> <link rel="icon" href="icons/favicon.ico" sizes="any">
+    <link rel="icon" href="icons/icon-192x192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+    <title>Interaktiv PWA Träningsapp v1.4 - Metal Edition (Spara Pass)</title> <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Metal+Mania&family=Russo+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <style>
+        /* Anpassade typsnitt */
+        body {
+            font-family: 'Russo One', sans-serif;
+            overscroll-behavior-y: contain;
+            background-color: #000000;
+            color: #e5e7eb;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Metal Mania', cursive;
+            letter-spacing: 0.05em;
+        }
+        /* Anpassade färger för mörkt tema */
+        :root {
+            --color-primary: #dc2626; /* Röd accent */
+            --color-secondary: #4b5563; /* Mörkgrå */
+            --color-background: #111827; /* Mycket mörkblågrå för kort/sektioner */
+            --color-surface: #1f2937; /* Mörkare blågrå för ytor */
+            --color-text-primary: #f3f4f6; /* Nästan vit text */
+            --color-text-secondary: #9ca3af; /* Mellangrå text */
+            --color-border: #4b5563; /* Mörkgrå kantlinjer */
+            --color-success: #16a34a; /* Mörkare grön */
+            --color-warning: #d97706; /* Mörkare orange/gul */
+            --color-danger: #b91c1c; /* Mörkare röd */
+        }
+        .hidden { display: none; }
+
+        /* Flikar */
+        .tab-button { border-bottom-width: 3px; border-color: transparent; transition: all 0.3s ease; cursor: pointer; color: var(--color-text-secondary); padding: 0.75rem 1rem; text-transform: uppercase; font-size: 0.875rem; }
+        .tab-button:hover { color: var(--color-text-primary); border-color: var(--color-secondary); }
+        .tab-button.active { border-color: var(--color-primary); color: var(--color-text-primary); font-weight: bold; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Kort/Sektioner */
+        .section-card { background-color: var(--color-background); border: 1px solid var(--color-border); border-radius: 0.25rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
+        .info-section { background-color: var(--color-surface); border: 1px solid var(--color-border); border-radius: 0.25rem; padding: 1.5rem; margin-top: 1.5rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); }
+        .info-section h3 { color: var(--color-text-primary); }
+        .info-section ul { color: var(--color-text-secondary); }
+
+        /* Inputfält */
+        input[type="number"], input[type="text"], select { width: 5rem; padding: 0.6rem 0.5rem; border: 1px solid var(--color-border); border-radius: 0.25rem; text-align: center; background-color: var(--color-surface); color: var(--color-text-primary); font-family: 'Russo One', sans-serif; -moz-appearance: textfield; }
+        input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input::placeholder { color: var(--color-text-secondary); opacity: 0.7; }
+        input:disabled { background-color: #374151; cursor: not-allowed; opacity: 0.6; }
+        select { width: auto; min-width: 150px; }
+        input[type="file"] { display: none; } /* Dölj standard filinput */
+
+        /* Text för förslag/rekommendation */
+        .suggestion-text { font-size: 0.75rem; color: var(--color-text-secondary); margin-left: 0.25rem; font-style: italic; }
+        .recommendation-box { background-color: rgba(220, 38, 38, 0.1); border: 1px solid var(--color-primary); color: #fecaca; padding: 0.75rem 1rem; border-radius: 0.25rem; margin-top: 0.75rem; font-size: 0.875rem; text-align: center; }
+
+        /* Knappar */
+        .btn { padding: 0.75rem 1.5rem; border-radius: 0.25rem; font-weight: bold; cursor: pointer; transition: all 0.2s ease; text-align: center; border: 1px solid transparent; text-transform: uppercase; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .btn:disabled { background-color: #4b5563; color: #9ca3af; cursor: not-allowed; opacity: 0.5; border-color: #4b5563; }
+        .btn:active:not(:disabled) { transform: scale(0.97); }
+        .btn-sm { padding: 0.5rem 1rem; font-size: 0.875rem; }
+        .btn-primary { background-color: var(--color-primary); color: var(--color-text-primary); border-color: #f87171; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.3), 0 2px 3px rgba(0,0,0,0.4); }
+        .btn-primary:hover:not(:disabled) { background-color: #b91c1c; border-color: #ef4444; }
+        .btn-secondary { background-color: var(--color-secondary); color: var(--color-text-primary); border-color: #6b7280; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2), 0 2px 3px rgba(0,0,0,0.3); }
+        .btn-secondary:hover:not(:disabled) { background-color: #374151; border-color: #4b5563; }
+        .btn-success { background-color: var(--color-success); color: var(--color-text-primary); border-color: #4ade80; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.3), 0 2px 3px rgba(0,0,0,0.4); }
+        .btn-success:hover:not(:disabled) { background-color: #15803d; border-color: #22c55e; }
+        .btn-danger { background-color: var(--color-danger); color: var(--color-text-primary); border-color: #ef4444; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.3), 0 2px 3px rgba(0,0,0,0.4); }
+        .btn-danger:hover:not(:disabled) { background-color: #991b1b; border-color: #dc2626; }
+        .btn-warning { background-color: var(--color-warning); color: #1f2937; border-color: #fcd34d; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2), 0 2px 3px rgba(0,0,0,0.3); }
+        .btn-warning:hover:not(:disabled) { background-color: #b45309; border-color: #facc15; }
+
+        /* Timer */
+        .timer-display { font-size: 3rem; font-weight: bold; color: var(--color-text-primary); background-color: var(--color-surface); padding: 1.5rem 2.5rem; border-radius: 0.25rem; display: inline-block; min-width: 150px; text-align: center; border: 1px solid var(--color-border); box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        /* Set-rader */
+        .set-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: 1rem 0.5rem; border-bottom: 1px dashed var(--color-border); gap: 0.75rem; }
+        .set-row:last-child { border-bottom: none; }
+        .set-info { font-weight: bold; color: var(--color-text-primary); min-width: 60px; flex-basis: 60px; font-size: 1rem; }
+        .set-inputs { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; flex-grow: 1; justify-content: center; margin: 0.25rem 0; }
+        .set-inputs label { font-size: 0.875rem; color: var(--color-text-secondary); margin-right: 0.25rem; }
+        .set-actions { display: flex; gap: 0.5rem; justify-content: flex-end; flex-basis: 100%; md:flex-basis: auto; margin-top: 0.5rem; }
+        .set-status { font-weight: bold; text-align: right; flex-basis: 100%; md:flex-basis: auto; margin-top: 0.25rem; text-transform: uppercase; font-size: 0.8rem;}
+        .set-complete { color: var(--color-success); }
+        .set-pending { color: var(--color-text-secondary); }
+        .set-skipped { color: var(--color-warning); }
+
+        /* Historik */
+        .history-entry { background-color: var(--color-surface); border: 1px solid var(--color-border); border-radius: 0.25rem; padding: 1rem; margin-bottom: 1rem; }
+        .history-entry h4 { color: var(--color-primary); }
+        .history-exercise { margin-top: 0.5rem; padding-left: 1rem; border-left: 3px solid var(--color-secondary); }
+        .history-exercise strong { color: var(--color-text-primary); }
+
+        /* Statistik */
+        .chart-container { position: relative; margin: auto; height: 60vh; max-height: 400px; width: 95%; max-width: 800px; margin-bottom: 2rem; background-color: var(--color-surface); padding: 1rem; border-radius: 0.25rem; border: 1px solid var(--color-border); }
+        #stats-exercise-select { background-color: var(--color-surface); color: var(--color-text-primary); border: 1px solid var(--color-border); }
+        /* Container */
+        .main-container { max-width: 4xl; margin-left: auto; margin-right: auto; background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url('https://placehold.co/1000x800/000000/4b5563?text=METAL+BG'); background-attachment: fixed; border-radius: 0.25rem; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5); padding: 1.5rem; md:padding: 2rem; border: 2px solid var(--color-border); }
+        /* Header */
+        header h1 { color: var(--color-primary); text-shadow: 1px 1px 3px rgba(0,0,0,0.7); }
+        header p { color: var(--color-text-secondary); }
+        /* Footer */
+        footer { color: var(--color-text-secondary); font-size: 0.8rem; }
+        /* Data Management section */
+        #data-management { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--color-border); }
+
+    </style>
+</head>
+<body class="bg-black p-4 md:p-8"> <div class="main-container"> <header class="mb-6 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold">METAL WORKOUT</h1> <p class="text-lg mt-1">Forged in Iron - Fueled by Pain</p> <button id="notifications-btn" class="btn btn-secondary btn-sm mt-4 hidden" onclick="requestNotificationPermission()">
+                <i class="fas fa-bell"></i> Aktivera Notiser
+            </button>
+        </header>
+
+        <main id="app-container">
+
+            <nav id="main-tabs" class="flex flex-wrap justify-center border-b-2 border-gray-700 mb-8"> <button id="tab-workout" class="tab-button active" onclick="showTab('workout')">Workout</button>
+                <button id="tab-stats" class="tab-button" onclick="showTab('stats'); renderStatistics();">Stats</button>
+                <button id="tab-progression" class="tab-button" onclick="showTab('progression')">Progression</button>
+                <button id="tab-kost" class="tab-button" onclick="showTab('kost')">Fuel & Lore</button> <button id="tab-history" class="tab-button" onclick="showTab('history'); renderHistory();">History</button>
+            </nav>
+
+            <section id="content-workout" class="tab-content active">
+                <div id="start-workout-section">
+                    <h2 class="text-2xl font-semibold mb-6 text-gray-300 text-center">Prepare for Battle!</h2>
+                    <div id="next-workout-info" class="text-center mb-8">
+                        <p class="text-xl">Next Session: <span id="next-workout-day" class="font-bold text-red-500"></span></p>
+                        <p class="text-sm text-gray-500">Last Stand Conquered.</p>
+                    </div>
+                    <div class="flex justify-center gap-6">
+                        <button id="start-day1-btn" class="btn btn-primary" onclick="startWorkout(1)"><i class="fas fa-dumbbell"></i> Start Day 1</button>
+                        <button id="start-day2-btn" class="btn btn-primary" onclick="startWorkout(2)"><i class="fas fa-skull-crossbones"></i> Start Day 2</button>
+                    </div>
+                </div>
+                <div id="active-workout-section" class="hidden">
+                    <h2 id="active-workout-title" class="text-3xl mb-6 text-red-500 text-center"></h2>
+                    <div id="timer-section" class="text-center mb-8 hidden section-card"> <h3 class="text-xl font-medium text-gray-400 mb-3">Rest & Reload!</h3>
+                        <div id="timer-display" class="timer-display mb-4">00:00</div>
+                        <button class="btn btn-warning btn-sm" onclick="skipRest()"><i class="fas fa-forward"></i> Skip Rest</button>
+                    </div>
+                    <div id="current-exercise-section" class="hidden">
+                        <div class="section-card active-exercise-card"> <div class="flex justify-between items-center mb-4 flex-wrap">
+                                <h3 id="exercise-name" class="font-semibold text-2xl text-red-400">Exercise Name</h3>
+                                <span id="exercise-progress" class="text-sm font-medium text-gray-400">Exercise X of Y</span>
+                            </div>
+                            <p class="text-gray-300 mb-2">Target: <span id="exercise-target" class="font-medium text-gray-100"></span></p>
+                            <p class="text-gray-300 mb-4">Rest: <span id="exercise-rest" class="font-medium text-gray-100"></span></p>
+                            <div id="recommendation-container" class="mb-4"></div>
+                            <div id="sets-container" class="mt-4"></div>
+                            <p id="exercise-note" class="text-sm text-gray-500 mt-4"></p>
+                        </div>
+                        <div class="flex justify-between mt-8">
+                             <button class="btn btn-secondary" onclick="previousExercise()" id="prev-exercise-btn"><i class="fas fa-arrow-left"></i> Prev</button>
+                             <button class="btn btn-success" onclick="nextExercise()" id="next-exercise-btn">Next <i class="fas fa-arrow-right"></i></button>
+                        </div>
+                    </div>
+                    <div id="workout-complete-section" class="hidden text-center section-card">
+                        <h3 class="text-4xl font-bold text-green-500 mb-4">Victory!</h3>
+                        <i class="fas fa-trophy fa-3x text-yellow-400 mb-4"></i>
+                        <p class="text-xl text-gray-300 mb-8">Session <span id="completed-day" class="text-red-500"></span> Conquered!</p>
+                        <button class="btn btn-primary" onclick="finishWorkout()"><i class="fas fa-save"></i> Save & Exit</button>
+                    </div>
+                     <div class="mt-10 text-center">
+                         <button class="btn btn-danger" onclick="confirmAbandonWorkout()"><i class="fas fa-times-circle"></i> Abandon Session</button>
+                     </div>
+                </div>
+            </section>
+
+            <section id="content-stats" class="tab-content">
+                 <h2 class="text-3xl mb-6 text-gray-300 text-center">Strength Progression</h2>
+                 <div class="flex justify-center mb-6">
+                     <select id="stats-exercise-select" onchange="renderStatistics()">
+                         <option value="">-- Select Exercise --</option>
+                     </select>
+                 </div>
+                 <div class="chart-container">
+                     <canvas id="progressionChart"></canvas>
+                 </div>
+                 <p id="no-stats-message" class="text-center text-gray-500 hidden mt-4">No stats to display. Crush some workouts first!</p>
+            </section>
+
+            <section id="content-progression" class="tab-content">
+                 <div class="info-section">
+                    <h2 class="text-2xl mb-4 text-gray-300">Progression Rules</h2>
+                    <p class="text-sm text-gray-400 mb-4">The app suggests increases based on these ancient scrolls.</p>
+                    <ul class="list-disc space-y-3 pl-5 text-gray-400">
+                        <li><strong>Increase Weight:</strong> When hitting the top reps (e.g., 8 reps on Squats) on ALL completed sets, increase weight by ~2.5-5% (usually 2.5kg) next time. Aim for the lower rep range with the new weight.</li>
+                        <li><strong>Weeks 9-12 (Manual):</strong> Remember to adjust Squat, Bench, Press reps to 4-6 and increase weight accordingly. The app won't remind you of this specific phase shift.</li>
+                        <li><strong>Rest-Pause:</strong> On the LAST set of Squat, Bench, Deadlift, Row: after failure, rest 15-20 sec (deep breaths), then perform AMRAP with the same weight. Log reps in notes or mentally track.</li>
+                        <li><strong>AMRAP Sets (Chins):</strong> Log actual reps. The app will suggest last session's reps. Beat it!</li>
+                        <li><strong>Timed Sets (Plank):</strong> When hitting the top time (e.g., 60s) on all sets, increase difficulty next time (add weight, hold longer). No automatic suggestion here.</li>
+                    </ul>
+                 </div>
+            </section>
+
+            <section id="content-kost" class="tab-content">
+                 <div class="info-section mb-6">
+                    <h2 class="text-2xl mb-4 text-gray-300">Warrior Fuel</h2>
+                     <ul class="list-disc space-y-2 pl-5 text-gray-400">
+                         <li><strong>Protein:</strong> 1.8 - 2.2 g per kg bodyweight/day. Crucial for muscle repair.</li>
+                         <li><strong>Calorie Deficit:</strong> 300 - 500 kcal/day below maintenance for fat loss.</li>
+                         <li><strong>Timing:</strong> Spread protein intake. Post-battle meal is beneficial.</li>
+                         <li><strong>Carbs & Fats:</strong> Fill remaining calories with quality sources (oats, rice, greens, fruits, nuts, oils).</li>
+                     </ul>
+                 </div>
+                 <div class="info-section">
+                    <h2 class="text-2xl mb-4 text-gray-300">Program Lore</h2>
+                    <h3 class="text-xl text-red-400 mb-2">Exercise Choice</h3>
+                     <ul class="list-disc space-y-1 pl-5 text-gray-400 mb-4">
+                         <li>Compound lifts forge maximum power & calorie burn (aftermath included).</li>
+                         <li>Squats & Deadlifts ignite hormonal fires for fat burning & strength.</li>
+                         <li>Push/Pull balance ensures symmetrical armor plating.</li>
+                         <li>Unilateral work (Split Squats) crushes imbalances.</li>
+                     </ul>
+                      <h3 class="text-xl text-red-400 mb-2">Reps & Rest</h3>
+                     <ul class="list-disc space-y-1 pl-5 text-gray-400 mb-4">
+                         <li>6-8 reps build raw power (Type II fibers).</li>
+                         <li>8-10 reps balance power & endurance.</li>
+                         <li>10-12 reps maximize metabolic stress (growth).</li>
+                         <li>Longer rest (2-3 min) for heavy lifts = full force recovery.</li>
+                         <li>Shorter rest (60-90s) for smaller lifts = increased metabolic fury.</li>
+                     </ul>
+                      <h3 class="text-xl text-red-400 mb-2">Intensity & Volume</h3>
+                     <ul class="list-disc space-y-1 pl-5 text-gray-400 mb-4">
+                         <li>Rest-pause amplifies volume efficiently.</li>
+                         <li>Progressive Overload is the path to godhood.</li>
+                         <li>Total volume (4-10 heavy sets/muscle/week) is the proven formula.</li>
+                     </ul>
+                      <h3 class="text-xl text-red-400 mb-2">Recovery</h3>
+                     <ul class="list-disc space-y-1 pl-5 text-gray-400">
+                         <li>~48h rest per muscle group allows rebuilding.</li>
+                         <li>Sleep and stress management are paramount.</li>
+                     </ul>
+                 </div>
+            </section>
+
+             <section id="content-history" class="tab-content">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-3xl text-gray-300">Battle Log</h2>
+                    <button class="btn btn-danger btn-sm" onclick="confirmClearHistory()"><i class="fas fa-trash-alt"></i> Clear Log</button>
+                </div>
+                <div id="history-list" class="mb-6">
+                    <p id="no-history-message" class="text-gray-500 text-center">The log is empty. Go forth and conquer!</p>
+                    </div>
+                <div id="data-management" class="section-card">
+                     <h3 class="text-xl mb-4 text-gray-300">Data Management</h3>
+                     <p class="text-sm text-gray-400 mb-4">Save all your progress to a file or load a previous full backup.</p>
+                     <div class="flex flex-col sm:flex-row gap-4">
+                         <button class="btn btn-secondary" onclick="exportData()"><i class="fas fa-file-export"></i> Exportera All Data</button>
+                         <button class="btn btn-secondary" onclick="triggerImport()"><i class="fas fa-file-import"></i> Importera Data</button>
+                         <input type="file" id="import-file-input" accept=".json" onchange="importData(event)">
+                     </div>
+                     <p class="text-xs text-gray-500 mt-4">Note: Single workout files are offered for saving after completing each session.</p>
+                </div>
+            </section>
+
+        </main>
+
+        <footer class="mt-10 text-center text-sm text-gray-500 border-t border-gray-700 pt-4">
+            PWA Metal Edition v1.4 - Pain is Temporary, Glory is Forever.
+        </footer>
+    </div>
+
+    <script>
+        // ==========================
+        //      PROGRAM DEFINITION & STATE (No changes needed here)
+        // ==========================
+        const program = { /* ... (Keep the same program definition as v1.1) ... */
+             // Helper function to parse rep range string like "6-8"
+            parseRepRange: (repString) => {
+                if (!repString || typeof repString !== 'string') return { min: 0, max: 0 };
+                if (repString.toLowerCase() === 'amrap') return { min: 1, max: Infinity }; // AMRAP has min 1
+                const parts = repString.split('-').map(n => parseInt(n.trim(), 10));
+                if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                    return { min: Math.min(parts[0], parts[1]), max: Math.max(parts[0], parts[1]) };
+                } else if (parts.length === 1 && !isNaN(parts[0])) {
+                    return { min: parts[0], max: parts[0] }; // Handle single number reps
+                }
+                return { min: 0, max: 0 }; // Fallback
+            },
+            days: [ /* ... same days data ... */
+                // Dag 1
+                {
+                    name: "Dag 1: Push & Ben",
+                    exercises: [
+                        { id: "d1e1", name: "Knäböj", sets: 4, reps: "6-8", rest: 150, type: 'reps', note: "Vecka 9-12: 4-6 reps." },
+                        { id: "d1e2", name: "Bänkpress", sets: 4, reps: "6-8", rest: 120, type: 'reps', note: "Vecka 9-12: 4-6 reps." },
+                        { id: "d1e3", name: "Stående axelpress", sets: 3, reps: "8-10", rest: 120, type: 'reps', note: "Vecka 9-12: 4-6 reps." },
+                        { id: "d1e4", name: "Chins", sets: 3, reps: "AMRAP", rest: 120, type: 'amrap' },
+                        { id: "d1e5", name: "Bulgarian split squat", sets: 2, reps: "10-12", rest: 90, type: 'bilateral-reps' },
+                        { id: "d1e6", name: "Plankan", sets: 3, duration: "30-60", rest: 60, type: 'time' }
+                    ]
+                },
+                // Dag 2
+                {
+                    name: "Dag 2: Pull & Baksida",
+                    exercises: [
+                        { id: "d2e1", name: "Marklyft", sets: 4, reps: "6-8", rest: 180, type: 'reps' },
+                        { id: "d2e2", name: "Rodd med skivstång", sets: 4, reps: "8-10", rest: 120, type: 'reps' },
+                        { id: "d2e3", name: "Overhead triceps extension", sets: 3, reps: "10-12", rest: 90, type: 'reps' },
+                        { id: "d2e4", name: "Bicepscurls", sets: 3, reps: "10-12", rest: 90, type: 'reps' },
+                        { id: "d2e5", name: "Rumänsk marklyft", sets: 3, reps: "10-12", rest: 120, type: 'reps' },
+                        { id: "d2e6", name: "Sidoplankan", sets: 2, duration: "30-45", rest: 60, type: 'bilateral-time' }
+                    ]
+                }
+             ]
+        };
+        let currentWorkout = null;
+        let currentExerciseIndex = 0;
+        let currentSetIndex = 0;
+        let nextWorkoutDay = 1;
+        let workoutHistory = [];
+        let timerIntervalId = null;
+        let restEndTime = null;
+        let synth = null;
+        let wakeLock = null;
+        let progressionChart = null;
+
+        // ==========================
+        //      DOM ELEMENTS CACHE (Keep as is)
+        // ==========================
+        const startWorkoutSection = document.getElementById('start-workout-section');
+        const activeWorkoutSection = document.getElementById('active-workout-section');
+        const nextWorkoutDaySpan = document.getElementById('next-workout-day');
+        const activeWorkoutTitle = document.getElementById('active-workout-title');
+        const timerSection = document.getElementById('timer-section');
+        const timerDisplay = document.getElementById('timer-display');
+        const currentExerciseSection = document.getElementById('current-exercise-section');
+        const exerciseName = document.getElementById('exercise-name');
+        const exerciseProgress = document.getElementById('exercise-progress');
+        const exerciseTarget = document.getElementById('exercise-target');
+        const exerciseRest = document.getElementById('exercise-rest');
+        const exerciseNote = document.getElementById('exercise-note');
+        const recommendationContainer = document.getElementById('recommendation-container');
+        const setsContainer = document.getElementById('sets-container');
+        const workoutCompleteSection = document.getElementById('workout-complete-section');
+        const completedDaySpan = document.getElementById('completed-day');
+        const historyList = document.getElementById('history-list');
+        const noHistoryMessage = document.getElementById('no-history-message');
+        const notificationsBtn = document.getElementById('notifications-btn');
+        const prevExerciseBtn = document.getElementById('prev-exercise-btn');
+        const nextExerciseBtn = document.getElementById('next-exercise-btn');
+        const statsExerciseSelect = document.getElementById('stats-exercise-select');
+        const chartCanvas = document.getElementById('progressionChart');
+        const noStatsMessage = document.getElementById('no-stats-message');
+        const importFileInput = document.getElementById('import-file-input');
+
+        // ==========================
+        //      UTILITY FUNCTIONS (Keep as is)
+        // ==========================
+        const formatTime = (seconds) => { /* ... */
+            if (isNaN(seconds) || seconds < 0) return "00:00";
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+         };
+        const saveState = () => { /* ... */
+            try {
+                localStorage.setItem('nextWorkoutDay', nextWorkoutDay);
+                localStorage.setItem('workoutHistory', JSON.stringify(workoutHistory));
+            } catch (error) {
+                console.error("Error saving state to localStorage:", error);
+                alert("Kunde inte spara data. Webbläsarens lagring kan vara full.");
+            }
+         };
+        const loadState = () => { /* ... */
+            const savedDay = localStorage.getItem('nextWorkoutDay');
+            const savedHistory = localStorage.getItem('workoutHistory');
+            nextWorkoutDay = savedDay ? parseInt(savedDay, 10) : 1;
+            if (savedHistory) {
+                try {
+                    workoutHistory = JSON.parse(savedHistory);
+                    if (!Array.isArray(workoutHistory)) workoutHistory = [];
+                } catch (error) {
+                    console.error("Error parsing workout history:", error);
+                    workoutHistory = [];
+                }
+            } else {
+                workoutHistory = [];
+            }
+            updateStartScreen();
+            populateStatsDropdown(); // Fyll i dropdown för statistik
+            renderHistory();
+         };
+        const showTab = (tabId) => { /* ... */
+            const mainContents = document.querySelectorAll('#app-container > section.tab-content');
+            const mainButtons = document.querySelectorAll('#main-tabs .tab-button');
+            mainContents.forEach(content => content.classList.toggle('active', content.id === `content-${tabId}`));
+            mainButtons.forEach(button => button.classList.toggle('active', button.id === `tab-${tabId}`));
+         };
+        const playSound = async (note = 'C4', duration = '8n') => { /* ... */
+             // Försök starta Tone.js context om det inte körs (kräver interaktion)
+            if (Tone.context.state !== 'running') {
+                try { await Tone.start(); console.log("Tone.js context started on demand."); }
+                catch (error) { console.error("Failed to start Tone.js context:", error); return; }
+            }
+            // Skapa synth om den inte finns och context är redo
+            if (!synth && Tone.context.state === 'running') {
+                try {
+                    synth = new Tone.Synth({ oscillator: { type: 'fatsawtooth', spread: 40, count: 3 }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.3, release: 0.5 } }).toDestination();
+                    const dist = new Tone.Distortion(0.4).toDestination(); synth.connect(dist);
+                } catch (error) { console.error("Failed to create Tone.Synth:", error); return; }
+            }
+             // Spela endast om synth finns och context är igång
+             if (synth && Tone.context.state === 'running') {
+                try { synth.triggerAttackRelease(note, duration); }
+                catch (error) { console.error("Tone.js playback error:", error); }
+             }
+         };
+        const vibrateDevice = (pattern = [100, 50, 100]) => { /* ... */
+             if ('vibrate' in navigator) { try { navigator.vibrate(pattern); } catch (e) { console.error("Vibration error:", e); } }
+         };
+        const showWorkoutNotification = (title, body) => { /* ... */
+             if ('Notification' in window && Notification.permission === 'granted') {
+                 if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                     navigator.serviceWorker.controller.postMessage({ type: 'show-notification', options: { title, body, icon: 'icons/icon-192x192.png', vibrate: [150, 50, 150] } });
+                 } else {
+                     try { new Notification(title, { body, icon: 'icons/icon-192x192.png', vibrate: [150, 50, 150] }); } catch (e) { console.error("Fallback notification error:", e); }
+                 }
+            } else if ('Notification' in window && Notification.permission === 'default') { notificationsBtn.classList.remove('hidden'); }
+         };
+        const requestNotificationPermission = () => { /* ... */
+             if (!('Notification' in window)) { alert('Your browser does not support notifications.'); return; }
+            Notification.requestPermission().then(permission => {
+                notificationsBtn.classList.add('hidden');
+                if (permission === 'granted') { showWorkoutNotification('Metal Workout', 'Notifications Activated!'); }
+            });
+         };
+        const findLastIndex = (array, predicate) => { /* ... */
+             for (let i = array.length - 1; i >= 0; i--) { if (predicate(array[i])) return i; } return -1;
+         };
+        const roundWeight = (weight) => { /* ... */
+             if (weight <= 0) return 0; return Math.round(weight / 1.25) * 1.25;
+         };
+        const calculateEpley1RM = (weight, reps) => { /* ... */
+             if (!weight || !reps || reps < 1 || weight <= 0) return 0; const effectiveReps = Math.min(reps, 12); return weight * (1 + effectiveReps / 30);
+         };
+
+        // ==========================
+        //      PROGRESSION HELPERS (Keep as is)
+        // ==========================
+        const findLastWorkoutDataForExercise = (exerciseId, targetDayIndex) => { /* ... */
+            const relevantHistory = workoutHistory.filter(w => w.dayIndex === targetDayIndex);
+            for (let i = relevantHistory.length - 1; i >= 0; i--) {
+                const workout = relevantHistory[i];
+                const exerciseData = workout.exercises.find(ex => ex.id === exerciseId);
+                const firstCompletedSet = exerciseData?.setsData.find(s => s.completed);
+                if (firstCompletedSet) { return { workoutDate: workout.startTime, exercise: exerciseData, firstCompletedSet: firstCompletedSet }; }
+            } return null;
+         };
+        const getPreviousWeightSuggestion = (exerciseId, targetDayIndex) => { /* ... */
+            const lastData = findLastWorkoutDataForExercise(exerciseId, targetDayIndex);
+            if (!lastData || !lastData.firstCompletedSet) return null; const set = lastData.firstCompletedSet;
+            if (set.weight !== null && set.weight !== undefined) { return typeof set.weight === 'object' ? set.weight : { L: set.weight, R: set.weight }; }
+            else if (set.reps !== null && lastData.exercise.type === 'amrap') { return { reps: set.reps }; }
+            else if (set.time !== null) { return typeof set.time === 'object' ? set.time : { L: set.time, R: set.time }; } return null;
+         };
+        const getWeightIncreaseRecommendation = (exerciseId, targetDayIndex) => { /* ... */
+            const lastData = findLastWorkoutDataForExercise(exerciseId, targetDayIndex);
+            if (!lastData || !lastData.firstCompletedSet || ['time', 'bilateral-time', 'amrap'].includes(lastData.exercise.type)) { return null; }
+            const exerciseDef = program.days[targetDayIndex - 1].exercises.find(ex => ex.id === exerciseId);
+            const repRange = program.parseRepRange(exerciseDef.reps);
+            const lastWeight = lastData.firstCompletedSet.weight;
+            const lastExerciseSets = lastData.exercise.setsData.filter(s => s.completed);
+            if (lastExerciseSets.length === 0 || repRange.max === 0) return null;
+            const reachedTopRange = lastExerciseSets.every(s => { if (exerciseDef.type === 'bilateral-reps') { return s.reps?.L >= repRange.max && s.reps?.R >= repRange.max; } else { return s.reps >= repRange.max; } });
+            if (reachedTopRange) {
+                let recommendedWeight;
+                if (exerciseDef.type === 'bilateral-reps') { recommendedWeight = { L: lastWeight?.L > 0 ? roundWeight(lastWeight.L + 2.5) : 0, R: lastWeight?.R > 0 ? roundWeight(lastWeight.R + 2.5) : 0 }; }
+                else { recommendedWeight = roundWeight((lastWeight || 0) + 2.5); }
+                 return { weight: recommendedWeight, reason: `You hit ${repRange.max} reps on all sets last time!` };
+            } return null;
+         };
+
+        // ==========================
+        //      WORKOUT LOGIC (Modify finishWorkout)
+        // ==========================
+        const startWorkout = async (dayIndex) => { /* ... */
+            await playSound('E3', '4n');
+            const dayData = program.days[dayIndex - 1];
+            const exercisesCopy = JSON.parse(JSON.stringify(dayData.exercises)).map(ex => ({ ...ex, setsData: Array(ex.sets).fill(null).map(() => ({ weight: null, reps: null, time: null, completed: false, skipped: false })) }));
+            currentWorkout = { dayIndex: dayIndex, dayName: dayData.name, startTime: new Date().toISOString(), exercises: exercisesCopy };
+            currentExerciseIndex = 0; currentSetIndex = 0;
+            updateWorkoutView();
+            startWorkoutSection.classList.add('hidden'); activeWorkoutSection.classList.remove('hidden');
+            timerSection.classList.add('hidden'); workoutCompleteSection.classList.add('hidden'); currentExerciseSection.classList.remove('hidden');
+            requestWakeLock();
+         };
+        const updateWorkoutView = () => { /* ... */
+            if (!currentWorkout) return;
+            const exercise = currentWorkout.exercises[currentExerciseIndex];
+            const totalExercises = currentWorkout.exercises.length;
+            activeWorkoutTitle.textContent = currentWorkout.dayName;
+            exerciseName.textContent = exercise.name;
+            exerciseProgress.textContent = `Exercise ${currentExerciseIndex + 1} of ${totalExercises}`;
+            let targetText = "";
+            if (exercise.type === 'reps' || exercise.type === 'amrap') targetText = `${exercise.sets} × ${exercise.reps}`;
+            else if (exercise.type === 'time') targetText = `${exercise.sets} × ${exercise.duration}s`;
+            else if (exercise.type === 'bilateral-reps') targetText = `${exercise.sets} × ${exercise.reps} / side`;
+            else if (exercise.type === 'bilateral-time') targetText = `${exercise.sets} × ${exercise.duration}s / side`;
+            exerciseTarget.textContent = targetText;
+            exerciseRest.textContent = `${exercise.rest} seconds`;
+            exerciseNote.textContent = exercise.note || "";
+            exerciseNote.classList.toggle('hidden', !exercise.note);
+            prevExerciseBtn.disabled = currentExerciseIndex === 0;
+            nextExerciseBtn.innerHTML = (currentExerciseIndex === totalExercises - 1) ? `Finish <i class="fas fa-flag-checkered"></i>` : `Next <i class="fas fa-arrow-right"></i>`;
+            nextExerciseBtn.classList.toggle('btn-success', currentExerciseIndex < totalExercises - 1);
+            nextExerciseBtn.classList.toggle('btn-primary', currentExerciseIndex === totalExercises - 1);
+            const recommendation = getWeightIncreaseRecommendation(exercise.id, currentWorkout.dayIndex);
+            recommendationContainer.innerHTML = '';
+            if (recommendation) {
+                let recText = `<i class="fas fa-bolt text-yellow-400 mr-2"></i>Recommendation: Increase to `;
+                if (exercise.type === 'bilateral-reps') { recText += `${recommendation.weight.L}kg (L) / ${recommendation.weight.R}kg (R).`; }
+                else { recText += `${recommendation.weight}kg.`; }
+                recText += ` (${recommendation.reason})`;
+                recommendationContainer.innerHTML = `<div class="recommendation-box">${recText}</div>`;
+            }
+            renderSets();
+        };
+        const renderSets = () => { /* ... */
+            if (!currentWorkout) return;
+            setsContainer.innerHTML = '';
+            const exercise = currentWorkout.exercises[currentExerciseIndex];
+            const previousData = getPreviousWeightSuggestion(exercise.id, currentWorkout.dayIndex);
+
+            exercise.setsData.forEach((setData, setIndex) => {
+                const setRow = document.createElement('div');
+                setRow.className = 'set-row';
+                const isCompleted = setData.completed;
+                const isSkipped = setData.skipped;
+                const isCurrent = setIndex === currentSetIndex && !isCompleted && !isSkipped && !timerIntervalId;
+                const baseId = `ex${currentExerciseIndex}-set${setIndex}`;
+                let inputsHTML = '';
+                let suggestionHTML = '';
+                const currentWeight = setData.weight ?? '';
+                const currentReps = setData.reps ?? '';
+                const currentTime = setData.time ?? '';
+
+                // Logic to create inputs based on type (same as before)
+                 if (exercise.type === 'reps' || exercise.type === 'amrap') {
+                    let placeholderWeight = ''; let placeholderReps = '';
+                    if (!isCompleted && !isSkipped && previousData?.L !== undefined) { placeholderWeight = previousData.L; suggestionHTML = `<span class="suggestion-text">(Last: ${previousData.L}kg)</span>`; }
+                    if (!isCompleted && !isSkipped && exercise.type === 'amrap' && previousData?.reps !== undefined) { placeholderReps = previousData.reps; suggestionHTML += `<span class="suggestion-text ml-1">(Last: ${previousData.reps} reps)</span>`; }
+                    inputsHTML = `
+                        <label for="${baseId}-weight">Wt:</label> <input type="number" id="${baseId}-weight" step="0.5" min="0" ${isCompleted || isSkipped ? 'disabled' : ''} value="${currentWeight}" placeholder="${placeholderWeight}"> ${suggestionHTML.includes('kg') ? suggestionHTML.match(/\(Last:.*?kg\)/)[0] : ''}
+                        <label for="${baseId}-reps" class="ml-2">Reps:</label> <input type="number" id="${baseId}-reps" step="1" min="0" ${isCompleted || isSkipped ? 'disabled' : ''} value="${currentReps}" placeholder="${placeholderReps}"> ${suggestionHTML.includes('reps') ? suggestionHTML.match(/\(Last:.*?reps\)/)[0] : ''}
+                    `;
+                } else if (exercise.type === 'time') {
+                    let placeholderTime = '';
+                    if (!isCompleted && !isSkipped && previousData?.L !== undefined) { placeholderTime = previousData.L; suggestionHTML = `<span class="suggestion-text">(Last: ${previousData.L}s)</span>`; }
+                    inputsHTML = `<label for="${baseId}-time">Time:</label> <input type="number" id="${baseId}-time" step="1" min="0" ${isCompleted || isSkipped ? 'disabled' : ''} value="${currentTime}" placeholder="${placeholderTime}"> ${suggestionHTML}`;
+                } else if (exercise.type === 'bilateral-reps') {
+                    let placeholderWeightL = '', placeholderWeightR = '', suggestionL = '', suggestionR = '';
+                    if (!isCompleted && !isSkipped && previousData?.L !== undefined) { placeholderWeightL = previousData.L; suggestionL = `<span class="suggestion-text">(L: ${previousData.L}kg)</span>`; }
+                    if (!isCompleted && !isSkipped && previousData?.R !== undefined) { placeholderWeightR = previousData.R; suggestionR = `<span class="suggestion-text">(R: ${previousData.R}kg)</span>`; }
+                    inputsHTML = `
+                        <div class="w-full md:w-auto flex items-center gap-1 flex-wrap">
+                            <label for="${baseId}-weight-L">Wt L:</label> <input type="number" id="${baseId}-weight-L" step="0.5" min="0" ${isCompleted || isSkipped ? 'disabled' : ''} value="${currentWeight?.L ?? ''}" placeholder="${placeholderWeightL}"> ${suggestionL}
+                            <label for="${baseId}-reps-L" class="ml-2">Reps L:</label> <input type="number" id="${baseId}-reps-L" step="1" min="0" ${isCompleted || isSkipped ? 'disabled' : ''} value="${currentReps?.L ?? ''}">
+                        </div>
+                        <div class="w-full md:w-auto flex items-center gap-1 flex-wrap mt-1 md:mt-0">
+                            <label for="${baseId}-weight-R">Wt R:</label> <input type="number" id="${baseId}-weight-R" step="0.5" min="0" ${isCompleted || isSkipped ? 'disabled' : ''} value="${currentWeight?.R ?? ''}" placeholder="${placeholderWeightR}"> ${suggestionR}
+                            <label for="${baseId}-reps-R" class="ml-2">Reps R:</label> <input type="number" id="${baseId}-reps-R" step="1" min="0" ${isCompleted || isSkipped ? 'disabled' : ''} value="${currentReps?.R ?? ''}">
+                        </div>`;
+                } else if (exercise.type === 'bilateral-time') {
+                    let placeholderTimeL = '', placeholderTimeR = '', suggestionL = '', suggestionR = '';
+                    if (!isCompleted && !isSkipped && previousData?.L !== undefined) { placeholderTimeL = previousData.L; suggestionL = `<span class="suggestion-text">(L: ${previousData.L}s)</span>`; }
+                    if (!isCompleted && !isSkipped && previousData?.R !== undefined) { placeholderTimeR = previousData.R; suggestionR = `<span class="suggestion-text">(R: ${previousData.R}s)</span>`; }
+                    inputsHTML = `
+                         <div class="w-full md:w-auto flex items-center gap-1 flex-wrap"> <label for="${baseId}-time-L">Time L:</label> <input type="number" id="${baseId}-time-L" step="1" min="0" ${isCompleted || isSkipped ? 'disabled' : ''} value="${currentTime?.L ?? ''}" placeholder="${placeholderTimeL}"> ${suggestionL} </div>
+                         <div class="w-full md:w-auto flex items-center gap-1 flex-wrap mt-1 md:mt-0"> <label for="${baseId}-time-R">Time R:</label> <input type="number" id="${baseId}-time-R" step="1" min="0" ${isCompleted || isSkipped ? 'disabled' : ''} value="${currentTime?.R ?? ''}" placeholder="${placeholderTimeR}"> ${suggestionR} </div>`;
+                }
+
+
+                let statusText = isCompleted ? 'Done' : (isSkipped ? 'Skipped' : 'Pending');
+                let statusClass = isCompleted ? 'set-complete' : (isSkipped ? 'set-skipped' : 'set-pending');
+                let actionButtonsHTML = '';
+                 if (!isCompleted && !isSkipped) {
+                     actionButtonsHTML = `
+                        <button class="btn btn-success btn-sm" onclick="logSet(${setIndex})" ${timerIntervalId ? 'disabled' : ''}><i class="fas fa-check"></i> Log</button>
+                        <button class="btn btn-warning btn-sm" onclick="skipSet(${setIndex})" ${timerIntervalId ? 'disabled' : ''}><i class="fas fa-forward"></i> Skip</button>
+                     `;
+                 } else {
+                     actionButtonsHTML = `<button class="btn btn-secondary btn-sm" onclick="resetSet(${setIndex})" ${timerIntervalId ? 'disabled' : ''}><i class="fas fa-undo"></i> Reset</button>`;
+                 }
+
+                setRow.innerHTML = `
+                    <span class="set-info ${isCurrent ? 'text-red-500' : ''}">Set ${setIndex + 1}</span>
+                    <div class="set-inputs"> ${inputsHTML} </div>
+                    <div class="set-actions"> ${actionButtonsHTML} </div>
+                    <span class="set-status ${statusClass} text-xs md:text-sm">${statusText}</span>`;
+                setsContainer.appendChild(setRow);
+            });
+         };
+        const logSet = (setIndex) => { /* ... */
+            if (!currentWorkout || timerIntervalId) return;
+            const exercise = currentWorkout.exercises[currentExerciseIndex];
+            const setData = exercise.setsData[setIndex];
+            const baseId = `ex${currentExerciseIndex}-set${setIndex}`;
+            try {
+                if (exercise.type === 'reps' || exercise.type === 'amrap') {
+                    setData.weight = parseFloat(document.getElementById(`${baseId}-weight`).value || document.getElementById(`${baseId}-weight`).placeholder || 0);
+                    setData.reps = parseInt(document.getElementById(`${baseId}-reps`).value || document.getElementById(`${baseId}-reps`).placeholder || 0);
+                } else if (exercise.type === 'time') { setData.time = parseInt(document.getElementById(`${baseId}-time`).value || document.getElementById(`${baseId}-time`).placeholder || 0); }
+                else if (exercise.type === 'bilateral-reps') {
+                    setData.weight = { L: parseFloat(document.getElementById(`${baseId}-weight-L`).value || document.getElementById(`${baseId}-weight-L`).placeholder || 0), R: parseFloat(document.getElementById(`${baseId}-weight-R`).value || document.getElementById(`${baseId}-weight-R`).placeholder || 0) };
+                    setData.reps = { L: parseInt(document.getElementById(`${baseId}-reps-L`).value || document.getElementById(`${baseId}-reps-L`).placeholder || 0), R: parseInt(document.getElementById(`${baseId}-reps-R`).value || document.getElementById(`${baseId}-reps-R`).placeholder || 0) };
+                } else if (exercise.type === 'bilateral-time') {
+                    setData.time = { L: parseInt(document.getElementById(`${baseId}-time-L`).value || document.getElementById(`${baseId}-time-L`).placeholder || 0), R: parseInt(document.getElementById(`${baseId}-time-R`).value || document.getElementById(`${baseId}-time-R`).placeholder || 0) };
+                }
+                setData.completed = true; setData.skipped = false;
+            } catch (error) { console.error("Error reading input values:", error); alert("Could not read values. Check inputs."); return; }
+            currentSetIndex++;
+            const allSetsDone = exercise.setsData.every(s => s.completed || s.skipped);
+            if (!allSetsDone && currentSetIndex < exercise.sets) { startTimer(exercise.rest); }
+            else { renderSets(); playSound('A4', '8n'); } // Higher pitch success sound
+         };
+        const skipSet = (setIndex) => { /* ... */
+            if (!currentWorkout || timerIntervalId) return;
+            const exercise = currentWorkout.exercises[currentExerciseIndex];
+            exercise.setsData[setIndex] = { ...exercise.setsData[setIndex], completed: false, skipped: true, weight: null, reps: null, time: null };
+            currentSetIndex++;
+            const allSetsDone = exercise.setsData.every(s => s.completed || s.skipped);
+            if (!allSetsDone && currentSetIndex < exercise.sets) { startTimer(exercise.rest); }
+            else { renderSets(); playSound('E3', '4n'); } // Low skip sound
+         };
+        const resetSet = (setIndex) => { /* ... */
+             if (!currentWorkout || timerIntervalId) return;
+             const exercise = currentWorkout.exercises[currentExerciseIndex];
+             exercise.setsData[setIndex] = { ...exercise.setsData[setIndex], completed: false, skipped: false, weight: null, reps: null, time: null };
+             const firstPendingIndex = exercise.setsData.findIndex(s => !s.completed && !s.skipped);
+             currentSetIndex = (firstPendingIndex !== -1) ? firstPendingIndex : 0;
+             renderSets();
+             playSound('C3', '8n'); // Low reset sound
+         };
+        const startTimer = (durationInSeconds) => { /* ... */
+            if (timerIntervalId) clearInterval(timerIntervalId);
+            restEndTime = Date.now() + durationInSeconds * 1000;
+            timerSection.classList.remove('hidden'); currentExerciseSection.classList.add('hidden'); renderSets();
+            const update = () => {
+                const now = Date.now(); const timeLeft = Math.max(0, Math.round((restEndTime - now) / 1000));
+                timerDisplay.textContent = formatTime(timeLeft);
+                if (timeLeft <= 0) {
+                    clearInterval(timerIntervalId); timerIntervalId = null;
+                    timerSection.classList.add('hidden'); currentExerciseSection.classList.remove('hidden');
+                    playSound('G4', '4n'); // Timer end sound
+                    vibrateDevice([200, 100, 200]); showWorkoutNotification('Metal Workout', 'Rest Over! Engage!'); renderSets();
+                } else if (timeLeft <= 3 && timeLeft > 0) { playSound('F#4', '16n'); vibrateDevice([50]); } // Countdown sound
+            };
+            update(); timerIntervalId = setInterval(update, 1000);
+         };
+        const skipRest = () => { /* ... */
+            if (timerIntervalId) {
+                clearInterval(timerIntervalId); timerIntervalId = null;
+                timerSection.classList.add('hidden'); currentExerciseSection.classList.remove('hidden');
+                playSound('D#4', '8n'); vibrateDevice([100]); renderSets();
+            }
+         };
+        const nextExercise = () => { /* ... */
+            if (!currentWorkout || timerIntervalId) return;
+            const allSetsDone = currentWorkout.exercises[currentExerciseIndex].setsData.every(s => s.completed || s.skipped);
+            if (!allSetsDone && !confirm("Not all sets logged. Proceed anyway?")) return;
+            if (currentExerciseIndex < currentWorkout.exercises.length - 1) {
+                currentExerciseIndex++; currentSetIndex = 0; updateWorkoutView(); playSound('F4'); // Next exercise sound
+            } else {
+                currentExerciseSection.classList.add('hidden'); workoutCompleteSection.classList.remove('hidden');
+                completedDaySpan.textContent = currentWorkout.dayIndex; playSound('C5', '2n'); // Victory sound
+            }
+         };
+        const previousExercise = () => { /* ... */
+             if (!currentWorkout || timerIntervalId || currentExerciseIndex === 0) return;
+             if (workoutCompleteSection.classList.contains('active')) { workoutCompleteSection.classList.add('hidden'); currentExerciseSection.classList.remove('hidden'); }
+             else { currentExerciseIndex--; }
+             const firstPendingIndex = currentWorkout.exercises[currentExerciseIndex].setsData.findIndex(s => !s.completed && !s.skipped);
+             currentSetIndex = (firstPendingIndex !== -1) ? firstPendingIndex : 0;
+             updateWorkoutView(); playSound('D4'); // Prev exercise sound
+         };
+        const confirmAbandonWorkout = () => { if (confirm("Abandon session? Data will be lost!")) { abandonWorkout(); } };
+        const abandonWorkout = () => { /* ... */
+            if (timerIntervalId) clearInterval(timerIntervalId); timerIntervalId = null;
+            currentWorkout = null; currentExerciseIndex = 0; currentSetIndex = 0;
+            activeWorkoutSection.classList.add('hidden'); startWorkoutSection.classList.remove('hidden');
+            updateStartScreen(); releaseWakeLock(); playSound('C2', '1n'); // Low abandon sound
+         };
+
+        // MODIFIED finishWorkout function
+        const finishWorkout = () => {
+            if (!currentWorkout) return;
+
+            // Spara passet internt först
+            currentWorkout.endTime = new Date().toISOString();
+            const finishedWorkoutData = JSON.parse(JSON.stringify(currentWorkout)); // Skapa en kopia för export
+            workoutHistory.push(finishedWorkoutData); // Spara kopian i historiken
+            nextWorkoutDay = currentWorkout.dayIndex === 1 ? 2 : 1;
+            saveState(); // Spara den uppdaterade historiken och nästa dag till localStorage
+
+            // Fråga om användaren vill exportera just detta pass
+            if (confirm("Passet är sparat internt. Vill du även spara detta enskilda pass som en separat fil?")) {
+                exportSingleWorkout(finishedWorkoutData); // Exportera bara det avslutade passet
+            }
+
+            // Återställ state och UI
+            const lastDay = currentWorkout.dayIndex;
+            currentWorkout = null; currentExerciseIndex = 0; currentSetIndex = 0;
+            workoutCompleteSection.classList.add('hidden'); activeWorkoutSection.classList.add('hidden');
+            startWorkoutSection.classList.remove('hidden');
+            updateStartScreen();
+            populateStatsDropdown(); // Uppdatera statistik-dropdown direkt
+            renderHistory(); // Uppdatera historikvyn
+            showTab('history'); // Byt till historikfliken som bekräftelse
+            releaseWakeLock();
+            showWorkoutNotification('Metal Workout', `Session ${lastDay} Conquered & Saved Internally!`);
+        };
+
+        const updateStartScreen = () => { /* ... */
+            nextWorkoutDaySpan.textContent = `Dag ${nextWorkoutDay}`;
+            const btn1 = document.getElementById('start-day1-btn'); const btn2 = document.getElementById('start-day2-btn');
+            btn1.classList.toggle('ring-2', nextWorkoutDay === 1); btn1.classList.toggle('ring-offset-2', nextWorkoutDay === 1); btn1.classList.toggle('ring-red-500', nextWorkoutDay === 1); // Red ring
+            btn2.classList.toggle('ring-2', nextWorkoutDay === 2); btn2.classList.toggle('ring-offset-2', nextWorkoutDay === 2); btn2.classList.toggle('ring-red-500', nextWorkoutDay === 2); // Red ring
+         };
+
+        // ==========================
+        //      HISTORY LOGIC (Keep as is)
+        // ==========================
+        const renderHistory = () => { /* ... */
+            historyList.innerHTML = '';
+            if (workoutHistory.length === 0) { noHistoryMessage.classList.remove('hidden'); return; }
+            noHistoryMessage.classList.add('hidden');
+            [...workoutHistory].reverse().forEach((workout) => {
+                const entryDiv = document.createElement('div'); entryDiv.className = 'history-entry';
+                const startTime = new Date(workout.startTime); const endTime = workout.endTime ? new Date(workout.endTime) : null;
+                const duration = endTime ? Math.round((endTime - startTime) / (1000 * 60)) : 'N/A';
+                let exercisesHTML = '<ul class="list-none mt-2 space-y-1">';
+                workout.exercises.forEach(ex => {
+                    if (ex.setsData.some(s => s.completed || s.skipped)) {
+                        exercisesHTML += `<li class="history-exercise text-sm"><strong class="text-gray-200">${ex.name}:</strong> `; // Ljusare strong
+                        let setsSummary = ex.setsData.map((s) => {
+                            if (s.completed) {
+                                let e1RM = 0;
+                                if ((ex.type === 'reps' || ex.type === 'amrap') && s.weight > 0 && s.reps > 0) { e1RM = calculateEpley1RM(s.weight, s.reps); }
+                                else if (ex.type === 'bilateral-reps' && s.weight?.L > 0 && s.reps?.L > 0) { const e1RM_L = calculateEpley1RM(s.weight.L, s.reps.L); const e1RM_R = calculateEpley1RM(s.weight.R, s.reps.R); e1RM = Math.max(e1RM_L, e1RM_R); }
+                                let setText = '';
+                                if (ex.type === 'reps' || ex.type === 'amrap') setText = `${s.weight}kg x ${s.reps}`;
+                                else if (ex.type === 'time') setText = `${s.time}s`;
+                                else if (ex.type === 'bilateral-reps') setText = `L:${s.weight.L}x${s.reps.L} / R:${s.weight.R}x${s.reps.R}`;
+                                else if (ex.type === 'bilateral-time') setText = `L:${s.time.L}s / R:${s.time.R}s`;
+                                if (e1RM > 0) { setText += ` <span class="text-gray-400">(~${e1RM.toFixed(1)}kg e1RM)</span>`; } // Dimma e1RM lite
+                                return setText;
+                            } else if (s.skipped) { return `<span class="text-yellow-500">(Skipped)</span>`; } // Tydligare skipped
+                            return null;
+                        }).filter(s => s !== null).join(', ');
+                        exercisesHTML += `${setsSummary}</li>`;
+                    }
+                }); exercisesHTML += '</ul>';
+                entryDiv.innerHTML = `
+                    <h4 class="text-xl font-semibold">${workout.dayName}</h4>
+                    <p class="text-xs text-gray-400">Date: ${startTime.toLocaleDateString('sv-SE')} ${startTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })} | Duration: ${endTime ? `${duration} min` : '(Incomplete)'}</p>
+                    ${exercisesHTML}`;
+                historyList.appendChild(entryDiv);
+            });
+        };
+        const confirmClearHistory = () => { if (confirm("Really clear the ENTIRE Battle Log? This cannot be undone!")) { clearHistory(); } };
+        const clearHistory = () => { /* ... */
+            workoutHistory = []; nextWorkoutDay = 1;
+            saveState(); renderHistory(); updateStartScreen(); populateStatsDropdown(); renderStatistics();
+            playSound('G2', '1n'); // Very low clear sound
+         };
+
+        // ==========================
+        //      STATISTICS LOGIC (Keep as is)
+        // ==========================
+        const populateStatsDropdown = () => { /* ... */
+             const exerciseNames = new Set();
+            workoutHistory.forEach(workout => {
+                workout.exercises.forEach(ex => {
+                    if (ex.setsData.some(s => s.completed && (s.weight !== null && s.weight !== undefined))) {
+                         exerciseNames.add(JSON.stringify({id: ex.id, name: ex.name}));
+                    }
+                });
+            });
+             const currentSelection = statsExerciseSelect.value;
+            statsExerciseSelect.innerHTML = '<option value="">-- Select Exercise --</option>';
+             const sortedExercises = Array.from(exerciseNames).map(jsonString => JSON.parse(jsonString)).sort((a, b) => a.name.localeCompare(b.name));
+            sortedExercises.forEach(exInfo => {
+                const option = document.createElement('option'); option.value = exInfo.id; option.textContent = exInfo.name; statsExerciseSelect.appendChild(option);
+            });
+             if (sortedExercises.some(ex => ex.id === currentSelection)) { statsExerciseSelect.value = currentSelection; }
+             else if (sortedExercises.length > 0) { statsExerciseSelect.value = sortedExercises[0].id; }
+             else { statsExerciseSelect.value = ""; }
+         };
+        const renderStatistics = () => { /* ... */
+            const selectedExerciseId = statsExerciseSelect.value;
+            const ctx = chartCanvas.getContext('2d');
+            if (progressionChart) { progressionChart.destroy(); progressionChart = null; }
+
+            if (!selectedExerciseId || workoutHistory.length === 0) {
+                noStatsMessage.classList.remove('hidden'); chartCanvas.classList.add('hidden'); return;
+            }
+
+            const labels = []; const maxWeightData = []; const estimated1RMData = [];
+            workoutHistory.forEach(workout => {
+                const exerciseData = workout.exercises.find(ex => ex.id === selectedExerciseId);
+                if (exerciseData) {
+                    let sessionMaxWeight = 0; let sessionMaxE1RM = 0;
+                    let sessionDate = new Date(workout.startTime).toLocaleDateString('sv-SE');
+                    exerciseData.setsData.forEach(set => {
+                        if (set.completed) {
+                            let currentWeight = 0; let currentE1RM = 0;
+                            if ((exerciseData.type === 'reps' || exerciseData.type === 'amrap') && set.weight > 0) { currentWeight = set.weight; currentE1RM = calculateEpley1RM(set.weight, set.reps); }
+                            else if (exerciseData.type === 'bilateral-reps') { currentWeight = Math.max(set.weight?.L || 0, set.weight?.R || 0); const e1RM_L = calculateEpley1RM(set.weight?.L, set.reps?.L); const e1RM_R = calculateEpley1RM(set.weight?.R, set.reps?.R); currentE1RM = Math.max(e1RM_L, e1RM_R); }
+                            if (currentWeight > sessionMaxWeight) { sessionMaxWeight = currentWeight; }
+                            if (currentE1RM > sessionMaxE1RM) { sessionMaxE1RM = currentE1RM; }
+                        }
+                    });
+                    if (sessionMaxWeight > 0) {
+                         const existingIndex = labels.indexOf(sessionDate);
+                         if (existingIndex !== -1) { maxWeightData[existingIndex] = Math.max(maxWeightData[existingIndex], sessionMaxWeight); estimated1RMData[existingIndex] = Math.max(estimated1RMData[existingIndex], sessionMaxE1RM); }
+                         else { labels.push(sessionDate); maxWeightData.push(sessionMaxWeight); estimated1RMData.push(sessionMaxE1RM); }
+                    }
+                }
+            });
+
+            if (labels.length === 0) { noStatsMessage.classList.remove('hidden'); chartCanvas.classList.add('hidden'); return; }
+            noStatsMessage.classList.add('hidden'); chartCanvas.classList.remove('hidden');
+
+            // Chart.js Global Defaults for Dark Theme
+            Chart.defaults.color = '#9ca3af'; // Default text color (axes, labels)
+            Chart.defaults.borderColor = '#4b5563'; // Default border color (grid lines)
+
+            progressionChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Max Weight (kg)', data: maxWeightData,
+                        borderColor: '#f87171', backgroundColor: 'rgba(248, 113, 113, 0.5)', // Ljusare röd
+                        tension: 0.1, yAxisID: 'yWeight', borderWidth: 2, pointBackgroundColor: '#f87171', pointRadius: 4,
+                    }, {
+                        label: 'Est. 1RM (kg)', data: estimated1RMData,
+                        borderColor: '#60a5fa', backgroundColor: 'rgba(96, 165, 250, 0.5)', // Ljusblå
+                        tension: 0.1, yAxisID: 'y1RM', borderWidth: 2, pointBackgroundColor: '#60a5fa', pointRadius: 4,
+                        hidden: false // Visa båda som standard nu
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false, },
+                    plugins: {
+                        title: { display: true, text: `Progress: ${statsExerciseSelect.options[statsExerciseSelect.selectedIndex].text}`, color: '#f3f4f6', font: { size: 16, family: "'Metal Mania', cursive" } }, // Titel färg och font
+                        legend: { labels: { color: '#e5e7eb' } }, // Legend text färg
+                        tooltip: {
+                             backgroundColor: 'rgba(0, 0, 0, 0.8)', titleColor: '#f3f4f6', bodyColor: '#e5e7eb',
+                             callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.y !== null) { label += context.parsed.y.toFixed(1) + ' kg'; } return label; } }
+                        }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Date', color: '#9ca3af' }, grid: { color: '#374151' }, ticks: { color: '#9ca3af' } }, // X-axel färg
+                        yWeight: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Max Weight (kg)', color: '#f87171' }, beginAtZero: true, grid: { color: '#374151' }, ticks: { color: '#f87171' } }, // Y-axel vikt färg
+                        y1RM: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'Est. 1RM (kg)', color: '#60a5fa' }, beginAtZero: true, grid: { drawOnChartArea: false, }, ticks: { color: '#60a5fa' } } // Y-axel 1RM färg
+                    }
+                }
+            });
+         };
+
+        // ==========================
+        //      DATA EXPORT/IMPORT (Modify exportData, add exportSingleWorkout)
+        // ==========================
+
+        // Funktion för att exportera ALL data som JSON-fil
+        const exportData = () => {
+            if (workoutHistory.length === 0 && nextWorkoutDay === 1) {
+                alert("Ingen data att exportera."); return;
+            }
+            const dataToExport = { nextWorkoutDay: nextWorkoutDay, workoutHistory: workoutHistory, exportedAt: new Date().toISOString() };
+            const dataStr = JSON.stringify(dataToExport, null, 2);
+            const dataBlob = new Blob([dataStr], {type: "application/json"});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            const dateStr = new Date().toISOString().slice(0, 10);
+            link.setAttribute('download', `metal_workout_ALL_DATA_${dateStr}.json`); // Tydligare filnamn för all data
+            document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
+            alert("All data exporterad! Spara filen på ett säkert ställe.");
+            playSound('B4');
+        };
+
+        // NY Funktion för att exportera ETT enskilt pass
+        const exportSingleWorkout = (workoutData) => {
+            if (!workoutData) {
+                console.error("No workout data provided to exportSingleWorkout");
+                return;
+            }
+            // Skapa ett objekt som bara innehåller detta pass och en tidsstämpel
+            const dataToExport = {
+                singleWorkout: workoutData, // Kapsla in det i ett objekt för tydlighet
+                exportedAt: new Date().toISOString()
+            };
+
+            const dataStr = JSON.stringify(dataToExport, null, 2); // Pretty print
+            const dataBlob = new Blob([dataStr], {type: "application/json"});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+
+            // Skapa ett mer specifikt filnamn med datum och tid
+            const startTime = new Date(workoutData.startTime);
+            const dateStr = startTime.toISOString().slice(0, 10); // YYYY-MM-DD
+            const timeStr = startTime.toTimeString().slice(0, 8).replace(/:/g, ''); // HHMMSS
+            link.setAttribute('download', `metal_workout_pass_${dateStr}_${timeStr}.json`);
+
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            console.log(`Workout from ${startTime.toLocaleString()} offered for download.`);
+            // Ingen alert här, eftersom användaren aktivt valde att spara
+        };
+
+
+        // Funktion för att trigga den dolda filinputen (oförändrad)
+        const triggerImport = () => {
+            if (currentWorkout) { alert("Avsluta eller avbryt pågående pass innan du importerar data."); return; }
+            if (confirm("Importering kommer att skriva över nuvarande historik och nästa pass. Är du säker på att du vill fortsätta? (Använd endast filer exporterade med 'Exportera All Data')")) {
+                importFileInput.click();
+            }
+        };
+
+        // Funktion för att importera data från vald JSON-fil (oförändrad, importerar ALL data)
+        const importData = (event) => {
+            const file = event.target.files[0];
+            if (!file) { return; }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    // Validera att det är en fullständig export (inte en enskild pass-export)
+                    if (typeof importedData === 'object' && importedData !== null &&
+                        typeof importedData.nextWorkoutDay === 'number' &&
+                        Array.isArray(importedData.workoutHistory))
+                    {
+                        nextWorkoutDay = importedData.nextWorkoutDay;
+                        workoutHistory = importedData.workoutHistory;
+                        saveState();
+                        updateStartScreen(); populateStatsDropdown(); renderStatistics(); renderHistory();
+                        alert("Data importerad framgångsrikt!"); playSound('C5');
+                    } else if (importedData.singleWorkout) {
+                         alert("Fel: Detta verkar vara en fil för ett enskilt pass. Använd 'Exportera All Data'-filen för att importera hela historiken.");
+                         throw new Error("Attempted to import single workout file using full import function.");
+                    }
+                    else { throw new Error("Ogiltigt filformat eller saknad data."); }
+                } catch (error) {
+                    console.error("Error importing data:", error);
+                    alert(`Fel vid importering: ${error.message}\n\nSe till att du valt rätt JSON-fil (exporterad med 'Exportera All Data').`);
+                    playSound('C3', '2n');
+                } finally { event.target.value = null; }
+            };
+            reader.onerror = function(e) { console.error("Error reading file:", e); alert("Kunde inte läsa filen."); playSound('C3', '2n'); event.target.value = null; };
+            reader.readAsText(file);
+        };
+
+
+        // ==========================
+        //      SCREEN WAKE LOCK API & PWA Service Worker (Keep as is)
+        // ==========================
+        const requestWakeLock = async () => { /* ... */
+             if ('wakeLock' in navigator) { try { if (wakeLock && !wakeLock.released) return; wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); console.log('Screen Wake Lock is active.'); } catch (err) { console.error(`Wake Lock request failed: ${err.name}, ${err.message}`); wakeLock = null; } } else { console.warn('Screen Wake Lock API not supported.'); }
+         };
+        const releaseWakeLock = async () => { /* ... */
+             if (wakeLock !== null && wakeLock.released === false) { try { await wakeLock.release(); } catch (err) { console.error(`Wake Lock release failed: ${err.name}, ${err.message}`); } finally { wakeLock = null; } }
+         };
+        document.addEventListener('visibilitychange', async () => { /* ... */
+             if (document.visibilityState === 'visible' && currentWorkout && (!wakeLock || wakeLock.released)) { await requestWakeLock(); }
+         });
+        const registerServiceWorker = () => { /* ... */
+             if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('service-worker.js').then(registration => { console.log('Service Worker registered:', registration.scope); }).catch(error => { console.error('Service Worker registration failed:', error); }); navigator.serviceWorker.addEventListener('message', event => { console.log('Message from SW:', event.data); }); }); } else { console.warn('Service Worker not supported.'); }
+         };
+
+        // ==========================
+        //      INITIALIZATION (Keep as is)
+        // ==========================
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            showTab('workout');
+            updateStartScreen();
+            renderStatistics(); // Render initial chart if possible
+            if ('Notification' in window && Notification.permission === 'default') { notificationsBtn.classList.remove('hidden'); }
+            registerServiceWorker();
+        });
+
+    </script>
+
+    </body>
+</html>

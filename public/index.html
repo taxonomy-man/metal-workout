@@ -154,202 +154,6 @@
         #admin-loading { text-align: center; padding: 1rem; color: var(--color-text-secondary); }
 
     </style>
-</head>
-<body class="bg-black p-2 md:p-8">
-    <div class="main-container">
-        <header class="mb-4 md:mb-6">
-            <div id="user-info" class="hidden"> <span>Inloggad som: <span id="user-email" class="font-bold"></span></span>
-                <button class="btn btn-secondary btn-sm" onclick="logoutUser()">Logga ut</button>
-            </div>
-            <div class="text-center">
-                 <h1 class="text-3xl md:text-5xl font-bold">METAL WORKOUT</h1>
-                 <p class="text-base md:text-lg mt-1">Forged in Iron - Fueled by Pain</p>
-                 <button id="notifications-btn" class="btn btn-secondary btn-sm mt-3 hidden" onclick="requestNotificationPermission()">
-                    <i class="fas fa-bell"></i> Aktivera Notiser
-                </button>
-            </div>
-        </header>
-
-        <main id="app-container">
-             <section id="login-section">
-                <h2 class="text-2xl mb-6">Logga in för att fortsätta</h2>
-                <button id="login-btn" class="btn btn-primary" onclick="loginWithGoogle()">
-                    <i class="fab fa-google"></i> Logga in med Google
-                </button>
-                <p id="auth-error" class="text-red-500 mt-4 hidden"></p> </section>
-
-             <div id="main-content" class="hidden">
-                <nav id="main-tabs" class="flex flex-wrap justify-center border-b-2 border-gray-700 mb-6">
-                    <button id="tab-workout" class="tab-button active" onclick="showTab('workout')">Workout</button>
-                    <button id="tab-stats" class="tab-button" onclick="showTab('stats'); renderStatistics();">Stats</button>
-                    <button id="tab-progression" class="tab-button" onclick="showTab('progression')">Progression</button>
-                    <button id="tab-kost" class="tab-button" onclick="showTab('kost')">Fuel & Lore</button>
-                    <button id="tab-history" class="tab-button" onclick="showTab('history'); renderHistory();">History</button>
-                    <button id="tab-admin" class="tab-button hidden" onclick="showTab('admin')">Admin</button>
-                </nav>
-
-                <section id="content-workout" class="tab-content active">
-                    <div id="start-workout-section">
-                        <h2 class="text-xl md:text-2xl font-semibold mb-4 md:mb-6 text-gray-300 text-center">Prepare for Battle!</h2>
-                        <div id="next-workout-info" class="text-center mb-6 md:mb-8">
-                            <p class="text-lg md:text-xl">Next Session: <span id="next-workout-day" class="font-bold text-red-500"></span></p>
-                            <p class="text-xs md:text-sm text-gray-500">Last Stand Conquered.</p>
-                        </div>
-                        <div class="flex flex-col sm:flex-row justify-center gap-4 md:gap-6">
-                            <button id="start-day1-btn" class="btn btn-primary"><i class="fas fa-dumbbell"></i> Start Day 1</button>
-                            <button id="start-day2-btn" class="btn btn-primary"><i class="fas fa-skull-crossbones"></i> Start Day 2</button>
-                        </div>
-                    </div>
-                    <div id="active-workout-section" class="hidden">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 id="active-workout-title" class="text-2xl md:text-3xl text-red-500 text-center flex-grow"></h2>
-                            <button id="toggle-overview-btn" class="btn btn-secondary btn-sm" onclick="toggleWorkoutOverview()">
-                                <i class="fas fa-list-ul"></i> <span class="hidden md:inline ml-1">Översikt</span>
-                            </button>
-                        </div>
-                        <div id="workout-overview" class="hidden section-card mb-4">
-                             <h3 class="text-lg font-semibold mb-2 text-gray-300">Passöversikt</h3>
-                             <ul id="workout-overview-list"></ul>
-                        </div>
-                        <div id="timer-section" class="text-center mb-6 md:mb-8 hidden section-card">
-                             <h3 class="text-lg md:text-xl font-medium text-gray-400 mb-3">Rest & Reload!</h3>
-                            <div id="timer-display" class="timer-display mb-4">00:00</div>
-                            <button class="btn btn-warning btn-sm" onclick="skipRest()"><i class="fas fa-forward"></i> Skip Rest</button>
-                        </div>
-                        <div id="current-exercise-section" class="hidden">
-                            <div class="section-card active-exercise-card">
-                                <div class="flex justify-between items-start mb-3 flex-wrap">
-                                    <h3 id="exercise-name" class="font-semibold text-xl md:text-2xl text-red-400">Exercise Name</h3>
-                                    <span id="exercise-progress" class="text-xs md:text-sm font-medium text-gray-400 mt-1 md:mt-0">Exercise X of Y</span>
-                                </div>
-                                <p class="text-sm md:text-base text-gray-300 mb-1">Target: <span id="exercise-target" class="font-medium text-gray-100"></span></p>
-                                <p class="text-sm md:text-base text-gray-300 mb-3">Rest: <span id="exercise-rest" class="font-medium text-gray-100"></span></p>
-                                <div id="recommendation-container" class="mb-3"></div>
-                                <div id="sets-container" class="mt-3"></div>
-                                <p id="exercise-note" class="text-xs md:text-sm text-gray-500 mt-3"></p>
-                            </div>
-                            <div class="flex justify-between mt-6">
-                                 <button class="btn btn-secondary" onclick="previousExercise()" id="prev-exercise-btn"><i class="fas fa-arrow-left"></i> Prev</button>
-                                 <button class="btn btn-success" onclick="nextExercise()" id="next-exercise-btn">Next <i class="fas fa-arrow-right"></i></button>
-                            </div>
-                        </div>
-                        <div id="workout-complete-section" class="hidden text-center section-card">
-                            <h3 class="text-3xl md:text-4xl font-bold text-green-500 mb-4">Victory!</h3>
-                            <i class="fas fa-trophy fa-2x md:fa-3x text-yellow-400 mb-4"></i>
-                            <p class="text-lg md:text-xl text-gray-300 mb-6 md:mb-8">Session <span id="completed-day" class="text-red-500"></span> Conquered!</p>
-                            <button class="btn btn-primary" onclick="finishWorkout()"><i class="fas fa-save"></i> Save & Exit</button>
-                        </div>
-                         <div class="mt-8 md:mt-10 text-center">
-                             <button class="btn btn-danger" onclick="confirmAbandonWorkout()"><i class="fas fa-times-circle"></i> Abandon Session</button>
-                         </div>
-                    </div>
-                </section>
-
-                <section id="content-stats" class="tab-content">
-                     <h2 class="text-2xl md:text-3xl mb-4 md:mb-6 text-gray-300 text-center">Strength Progression</h2>
-                     <div class="flex justify-center mb-4 md:mb-6">
-                         <select id="stats-exercise-select" onchange="renderStatistics()">
-                             <option value="">-- Select Exercise --</option>
-                         </select>
-                     </div>
-                     <div class="chart-container">
-                         <canvas id="progressionChart"></canvas>
-                     </div>
-                     <p id="no-stats-message" class="text-center text-gray-500 hidden mt-4">No stats to display. Crush some workouts first!</p>
-                </section>
-
-                <section id="content-progression" class="tab-content">
-                     <div class="info-section">
-                        <h2 class="text-xl md:text-2xl mb-4 text-gray-300">Progression Rules</h2>
-                        <p class="text-xs md:text-sm text-gray-400 mb-4">The app suggests increases based on these ancient scrolls.</p>
-                        <ul class="list-disc space-y-2 md:space-y-3 pl-4 md:pl-5 text-sm md:text-base text-gray-400">
-                            <li><strong>Increase Weight:</strong> When hitting the top reps (e.g., 8 reps on Squats) on ALL completed sets, increase weight by ~2.5-5% (usually 2.5kg) next time. Aim for the lower rep range with the new weight.</li>
-                            <li><strong>Weeks 9-12 (Manual):</strong> Remember to adjust Squat, Bench, Press reps to 4-6 and increase weight accordingly. The app won't remind you of this specific phase shift.</li>
-                            <li><strong>Rest-Pause:</strong> On the LAST set of Squat, Bench, Deadlift, Row: after failure, rest 15-20 sec (deep breaths), then perform AMRAP with the same weight. Log reps in notes or mentally track.</li>
-                            <li><strong>AMRAP Sets (Chins):</strong> Log actual reps. The app will suggest last session's reps. Beat it!</li>
-                            <li><strong>Timed Sets (Plank):</strong> When hitting the top time (e.g., 60s) on all sets, increase difficulty next time (add weight, hold longer). No automatic suggestion here.</li>
-                        </ul>
-                     </div>
-                </section>
-
-                <section id="content-kost" class="tab-content">
-                     <div class="info-section mb-4 md:mb-6">
-                        <h2 class="text-xl md:text-2xl mb-4 text-gray-300">Warrior Fuel</h2>
-                         <ul class="list-disc space-y-2 pl-4 md:pl-5 text-sm md:text-base text-gray-400">
-                             <li><strong>Protein:</strong> 1.8 - 2.2 g per kg bodyweight/day. Crucial for muscle repair.</li>
-                             <li><strong>Calorie Deficit:</strong> 300 - 500 kcal/day below maintenance for fat loss.</li>
-                             <li><strong>Timing:</strong> Spread protein intake. Post-battle meal is beneficial.</li>
-                             <li><strong>Carbs & Fats:</strong> Fill remaining calories with quality sources (oats, rice, greens, fruits, nuts, oils).</li>
-                         </ul>
-                     </div>
-                     <div class="info-section">
-                        <h2 class="text-xl md:text-2xl mb-4 text-gray-300">Program Lore</h2>
-                        <h3 class="text-lg md:text-xl text-red-400 mb-2">Exercise Choice</h3>
-                         <ul class="list-disc space-y-1 pl-4 md:pl-5 text-sm md:text-base text-gray-400 mb-4">
-                             <li>Compound lifts forge maximum power & calorie burn (aftermath included).</li>
-                             <li>Squats & Deadlifts ignite hormonal fires for fat burning & strength.</li>
-                             <li>Push/Pull balance ensures symmetrical armor plating.</li>
-                             <li>Unilateral work (Split Squats) crushes imbalances.</li>
-                         </ul>
-                          <h3 class="text-lg md:text-xl text-red-400 mb-2">Reps & Rest</h3>
-                         <ul class="list-disc space-y-1 pl-4 md:pl-5 text-sm md:text-base text-gray-400 mb-4">
-                             <li>6-8 reps build raw power (Type II fibers).</li>
-                             <li>8-10 reps balance power & endurance.</li>
-                             <li>10-12 reps maximize metabolic stress (growth).</li>
-                             <li>Longer rest (2-3 min) for heavy lifts = full force recovery.</li>
-                             <li>Shorter rest (60-90s) for smaller lifts = increased metabolic fury.</li>
-                         </ul>
-                          <h3 class="text-lg md:text-xl text-red-400 mb-2">Intensity & Volume</h3>
-                         <ul class="list-disc space-y-1 pl-4 md:pl-5 text-sm md:text-base text-gray-400 mb-4">
-                             <li>Rest-pause amplifies volume efficiently.</li>
-                             <li>Progressive Overload is the path to godhood.</li>
-                             <li>Total volume (4-10 heavy sets/muscle/week) is the proven formula.</li>
-                         </ul>
-                          <h3 class="text-lg md:text-xl text-red-400 mb-2">Recovery</h3>
-                         <ul class="list-disc space-y-1 pl-4 md:pl-5 text-sm md:text-base text-gray-400">
-                             <li>~48h rest per muscle group allows rebuilding.</li>
-                             <li>Sleep and stress management are paramount.</li>
-                         </ul>
-                     </div>
-                </section>
-
-                 <section id="content-history" class="tab-content">
-                    <div class="flex justify-between items-center mb-4 md:mb-6">
-                        <h2 class="text-2xl md:text-3xl text-gray-300">Battle Log</h2>
-                        </div>
-                    <div id="history-list" class="mb-6">
-                        <p id="no-history-message" class="text-gray-500 text-center">The log is empty. Go forth and conquer!</p>
-                        </div>
-                    </section>
-
-                <section id="content-admin" class="tab-content">
-                    <h2 class="text-2xl md:text-3xl mb-4 md:mb-6 text-gray-300 text-center">Admin View</h2>
-                    <div class="section-card">
-                        <h3 class="text-xl mb-4">View User Data</h3>
-                        <div id="admin-user-input" class="flex flex-col sm:flex-row gap-2 items-center">
-                            <label for="admin-view-email" class="text-sm text-gray-400 flex-shrink-0">User Email:</label>
-                            <input type="email" id="admin-view-email" placeholder="Enter user's email address">
-                            <button class="btn btn-secondary btn-sm" onclick="loadAdminUserData()">Load Data</button>
-                        </div>
-                        <p id="admin-error" class="text-red-500 text-sm mt-2 hidden"></p>
-                         <div id="admin-loading" class="hidden">Loading user data... <i class="fas fa-spinner fa-spin"></i></div>
-                         <div id="admin-data-display" class="mt-4 hidden">
-                             <h4 class="text-lg mb-2">Viewing data for: <span id="admin-viewing-email" class="font-bold text-yellow-400"></span></h4>
-                             <p class="text-sm mb-2">Next Workout Day: <span id="admin-next-day" class="font-bold"></span></p>
-                             <h5 class="text-md font-semibold mt-4 mb-2 text-gray-300">Workout History:</h5>
-                             <div id="admin-history-list">
-                                 <p id="admin-no-history" class="text-gray-500">No history found for this user.</p>
-                                 </div>
-                         </div>
-                    </div>
-                </section>
-
-            </div> </main>
-
-        <footer class="mt-8 md:mt-10 text-center text-xs md:text-sm text-gray-500 border-t border-gray-700 pt-4">
-            PWA Metal Edition v1.6 - Pain is Temporary, Glory is Forever.
-        </footer>
-    </div>
 
     <script>
         // ==========================
@@ -358,17 +162,19 @@
 
         // === KLISTRA IN DIN FIREBASE CONFIG HÄR ===
         const firebaseConfig = {
-          apiKey: "YOUR_API_KEY", // Ersätt med din nyckel
-          authDomain: "YOUR_AUTH_DOMAIN", // Ersätt med din domän
-          projectId: "YOUR_PROJECT_ID", // Ersätt med ditt projekt-ID
-          storageBucket: "YOUR_STORAGE_BUCKET", // Ersätt med din bucket
-          messagingSenderId: "YOUR_MESSAGING_SENDER_ID", // Ersätt med ditt ID
-          appId: "YOUR_APP_ID" // Ersätt med ditt app-ID
+          apiKey: "AIzaSyBBThE5Pk5ygO_Op1s90T4v_XVmmS1C6Kk", // Ersatt
+          authDomain: "workoutapp-cdae9.firebaseapp.com", // Ersatt
+          projectId: "workoutapp-cdae9", // Ersatt
+          storageBucket: "workoutapp-cdae9.firebasestorage.app", // Ersatt
+          messagingSenderId: "282326588660", // Ersatt
+          appId: "1:282326588660:web:e9dd3c6a2b196c7550d2a1", // Ersatt
+          measurementId: "G-EEP1SGJPB1" // Tillagd
         };
         // ==========================================
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
+        const analytics = firebase.analytics(); // Tillagd för Analytics
         const auth = firebase.auth();
         const db = firebase.firestore();
         const googleProvider = new firebase.auth.GoogleAuthProvider();
@@ -1212,6 +1018,203 @@
         });
 
     </script>
+</head>
+<body class="bg-black p-2 md:p-8">
+    <div class="main-container">
+        <header class="mb-4 md:mb-6">
+            <div id="user-info" class="hidden"> <span>Inloggad som: <span id="user-email" class="font-bold"></span></span>
+                <button class="btn btn-secondary btn-sm" onclick="logoutUser()">Logga ut</button>
+            </div>
+            <div class="text-center">
+                 <h1 class="text-3xl md:text-5xl font-bold">METAL WORKOUT</h1>
+                 <p class="text-base md:text-lg mt-1">Forged in Iron - Fueled by Pain</p>
+                 <button id="notifications-btn" class="btn btn-secondary btn-sm mt-3 hidden" onclick="requestNotificationPermission()">
+                    <i class="fas fa-bell"></i> Aktivera Notiser
+                </button>
+            </div>
+        </header>
 
-    </body>
+        <main id="app-container">
+             <section id="login-section">
+                <h2 class="text-2xl mb-6">Logga in för att fortsätta</h2>
+                <button id="login-btn" class="btn btn-primary" onclick="loginWithGoogle()">
+                    <i class="fab fa-google"></i> Logga in med Google
+                </button>
+                <p id="auth-error" class="text-red-500 mt-4 hidden"></p> </section>
+
+             <div id="main-content" class="hidden">
+                <nav id="main-tabs" class="flex flex-wrap justify-center border-b-2 border-gray-700 mb-6">
+                    <button id="tab-workout" class="tab-button active" onclick="showTab('workout')">Workout</button>
+                    <button id="tab-stats" class="tab-button" onclick="showTab('stats'); renderStatistics();">Stats</button>
+                    <button id="tab-progression" class="tab-button" onclick="showTab('progression')">Progression</button>
+                    <button id="tab-kost" class="tab-button" onclick="showTab('kost')">Fuel & Lore</button>
+                    <button id="tab-history" class="tab-button" onclick="showTab('history'); renderHistory();">History</button>
+                    <button id="tab-admin" class="tab-button hidden" onclick="showTab('admin')">Admin</button>
+                </nav>
+
+                <section id="content-workout" class="tab-content active">
+                    <div id="start-workout-section">
+                        <h2 class="text-xl md:text-2xl font-semibold mb-4 md:mb-6 text-gray-300 text-center">Prepare for Battle!</h2>
+                        <div id="next-workout-info" class="text-center mb-6 md:mb-8">
+                            <p class="text-lg md:text-xl">Next Session: <span id="next-workout-day" class="font-bold text-red-500"></span></p>
+                            <p class="text-xs md:text-sm text-gray-500">Last Stand Conquered.</p>
+                        </div>
+                        <div class="flex flex-col sm:flex-row justify-center gap-4 md:gap-6">
+                            <button id="start-day1-btn" class="btn btn-primary"><i class="fas fa-dumbbell"></i> Start Day 1</button>
+                            <button id="start-day2-btn" class="btn btn-primary"><i class="fas fa-skull-crossbones"></i> Start Day 2</button>
+                        </div>
+                    </div>
+                    <div id="active-workout-section" class="hidden">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 id="active-workout-title" class="text-2xl md:text-3xl text-red-500 text-center flex-grow"></h2>
+                            <button id="toggle-overview-btn" class="btn btn-secondary btn-sm" onclick="toggleWorkoutOverview()">
+                                <i class="fas fa-list-ul"></i> <span class="hidden md:inline ml-1">Översikt</span>
+                            </button>
+                        </div>
+                        <div id="workout-overview" class="hidden section-card mb-4">
+                             <h3 class="text-lg font-semibold mb-2 text-gray-300">Passöversikt</h3>
+                             <ul id="workout-overview-list"></ul>
+                        </div>
+                        <div id="timer-section" class="text-center mb-6 md:mb-8 hidden section-card">
+                             <h3 class="text-lg md:text-xl font-medium text-gray-400 mb-3">Rest & Reload!</h3>
+                            <div id="timer-display" class="timer-display mb-4">00:00</div>
+                            <button class="btn btn-warning btn-sm" onclick="skipRest()"><i class="fas fa-forward"></i> Skip Rest</button>
+                        </div>
+                        <div id="current-exercise-section" class="hidden">
+                            <div class="section-card active-exercise-card">
+                                <div class="flex justify-between items-start mb-3 flex-wrap">
+                                    <h3 id="exercise-name" class="font-semibold text-xl md:text-2xl text-red-400">Exercise Name</h3>
+                                    <span id="exercise-progress" class="text-xs md:text-sm font-medium text-gray-400 mt-1 md:mt-0">Exercise X of Y</span>
+                                </div>
+                                <p class="text-sm md:text-base text-gray-300 mb-1">Target: <span id="exercise-target" class="font-medium text-gray-100"></span></p>
+                                <p class="text-sm md:text-base text-gray-300 mb-3">Rest: <span id="exercise-rest" class="font-medium text-gray-100"></span></p>
+                                <div id="recommendation-container" class="mb-3"></div>
+                                <div id="sets-container" class="mt-3"></div>
+                                <p id="exercise-note" class="text-xs md:text-sm text-gray-500 mt-3"></p>
+                            </div>
+                            <div class="flex justify-between mt-6">
+                                 <button class="btn btn-secondary" onclick="previousExercise()" id="prev-exercise-btn"><i class="fas fa-arrow-left"></i> Prev</button>
+                                 <button class="btn btn-success" onclick="nextExercise()" id="next-exercise-btn">Next <i class="fas fa-arrow-right"></i></button>
+                            </div>
+                        </div>
+                        <div id="workout-complete-section" class="hidden text-center section-card">
+                            <h3 class="text-3xl md:text-4xl font-bold text-green-500 mb-4">Victory!</h3>
+                            <i class="fas fa-trophy fa-2x md:fa-3x text-yellow-400 mb-4"></i>
+                            <p class="text-lg md:text-xl text-gray-300 mb-6 md:mb-8">Session <span id="completed-day" class="text-red-500"></span> Conquered!</p>
+                            <button class="btn btn-primary" onclick="finishWorkout()"><i class="fas fa-save"></i> Save & Exit</button>
+                        </div>
+                         <div class="mt-8 md:mt-10 text-center">
+                             <button class="btn btn-danger" onclick="confirmAbandonWorkout()"><i class="fas fa-times-circle"></i> Abandon Session</button>
+                         </div>
+                    </div>
+                </section>
+
+                <section id="content-stats" class="tab-content">
+                     <h2 class="text-2xl md:text-3xl mb-4 md:mb-6 text-gray-300 text-center">Strength Progression</h2>
+                     <div class="flex justify-center mb-4 md:mb-6">
+                         <select id="stats-exercise-select" onchange="renderStatistics()">
+                             <option value="">-- Select Exercise --</option>
+                         </select>
+                     </div>
+                     <div class="chart-container">
+                         <canvas id="progressionChart"></canvas>
+                     </div>
+                     <p id="no-stats-message" class="text-center text-gray-500 hidden mt-4">No stats to display. Crush some workouts first!</p>
+                </section>
+
+                <section id="content-progression" class="tab-content">
+                     <div class="info-section">
+                        <h2 class="text-xl md:text-2xl mb-4 text-gray-300">Progression Rules</h2>
+                        <p class="text-xs md:text-sm text-gray-400 mb-4">The app suggests increases based on these ancient scrolls.</p>
+                        <ul class="list-disc space-y-2 md:space-y-3 pl-4 md:pl-5 text-sm md:text-base text-gray-400">
+                            <li><strong>Increase Weight:</strong> When hitting the top reps (e.g., 8 reps on Squats) on ALL completed sets, increase weight by ~2.5-5% (usually 2.5kg) next time. Aim for the lower rep range with the new weight.</li>
+                            <li><strong>Weeks 9-12 (Manual):</strong> Remember to adjust Squat, Bench, Press reps to 4-6 and increase weight accordingly. The app won't remind you of this specific phase shift.</li>
+                            <li><strong>Rest-Pause:</strong> On the LAST set of Squat, Bench, Deadlift, Row: after failure, rest 15-20 sec (deep breaths), then perform AMRAP with the same weight. Log reps in notes or mentally track.</li>
+                            <li><strong>AMRAP Sets (Chins):</strong> Log actual reps. The app will suggest last session's reps. Beat it!</li>
+                            <li><strong>Timed Sets (Plank):</strong> When hitting the top time (e.g., 60s) on all sets, increase difficulty next time (add weight, hold longer). No automatic suggestion here.</li>
+                        </ul>
+                     </div>
+                </section>
+
+                <section id="content-kost" class="tab-content">
+                     <div class="info-section mb-4 md:mb-6">
+                        <h2 class="text-xl md:text-2xl mb-4 text-gray-300">Warrior Fuel</h2>
+                         <ul class="list-disc space-y-2 pl-4 md:pl-5 text-sm md:text-base text-gray-400">
+                             <li><strong>Protein:</strong> 1.8 - 2.2 g per kg bodyweight/day. Crucial for muscle repair.</li>
+                             <li><strong>Calorie Deficit:</strong> 300 - 500 kcal/day below maintenance for fat loss.</li>
+                             <li><strong>Timing:</strong> Spread protein intake. Post-battle meal is beneficial.</li>
+                             <li><strong>Carbs & Fats:</strong> Fill remaining calories with quality sources (oats, rice, greens, fruits, nuts, oils).</li>
+                         </ul>
+                     </div>
+                     <div class="info-section">
+                        <h2 class="text-xl md:text-2xl mb-4 text-gray-300">Program Lore</h2>
+                        <h3 class="text-lg md:text-xl text-red-400 mb-2">Exercise Choice</h3>
+                         <ul class="list-disc space-y-1 pl-4 md:pl-5 text-sm md:text-base text-gray-400 mb-4">
+                             <li>Compound lifts forge maximum power & calorie burn (aftermath included).</li>
+                             <li>Squats & Deadlifts ignite hormonal fires for fat burning & strength.</li>
+                             <li>Push/Pull balance ensures symmetrical armor plating.</li>
+                             <li>Unilateral work (Split Squats) crushes imbalances.</li>
+                         </ul>
+                          <h3 class="text-lg md:text-xl text-red-400 mb-2">Reps & Rest</h3>
+                         <ul class="list-disc space-y-1 pl-4 md:pl-5 text-sm md:text-base text-gray-400 mb-4">
+                             <li>6-8 reps build raw power (Type II fibers).</li>
+                             <li>8-10 reps balance power & endurance.</li>
+                             <li>10-12 reps maximize metabolic stress (growth).</li>
+                             <li>Longer rest (2-3 min) for heavy lifts = full force recovery.</li>
+                             <li>Shorter rest (60-90s) for smaller lifts = increased metabolic fury.</li>
+                         </ul>
+                          <h3 class="text-lg md:text-xl text-red-400 mb-2">Intensity & Volume</h3>
+                         <ul class="list-disc space-y-1 pl-4 md:pl-5 text-sm md:text-base text-gray-400 mb-4">
+                             <li>Rest-pause amplifies volume efficiently.</li>
+                             <li>Progressive Overload is the path to godhood.</li>
+                             <li>Total volume (4-10 heavy sets/muscle/week) is the proven formula.</li>
+                         </ul>
+                          <h3 class="text-lg md:text-xl text-red-400 mb-2">Recovery</h3>
+                         <ul class="list-disc space-y-1 pl-4 md:pl-5 text-sm md:text-base text-gray-400">
+                             <li>~48h rest per muscle group allows rebuilding.</li>
+                             <li>Sleep and stress management are paramount.</li>
+                         </ul>
+                     </div>
+                </section>
+
+                 <section id="content-history" class="tab-content">
+                    <div class="flex justify-between items-center mb-4 md:mb-6">
+                        <h2 class="text-2xl md:text-3xl text-gray-300">Battle Log</h2>
+                        </div>
+                    <div id="history-list" class="mb-6">
+                        <p id="no-history-message" class="text-gray-500 text-center">The log is empty. Go forth and conquer!</p>
+                        </div>
+                    </section>
+
+                <section id="content-admin" class="tab-content">
+                    <h2 class="text-2xl md:text-3xl mb-4 md:mb-6 text-gray-300 text-center">Admin View</h2>
+                    <div class="section-card">
+                        <h3 class="text-xl mb-4">View User Data</h3>
+                        <div id="admin-user-input" class="flex flex-col sm:flex-row gap-2 items-center">
+                            <label for="admin-view-email" class="text-sm text-gray-400 flex-shrink-0">User Email:</label>
+                            <input type="email" id="admin-view-email" placeholder="Enter user's email address">
+                            <button class="btn btn-secondary btn-sm" onclick="loadAdminUserData()">Load Data</button>
+                        </div>
+                        <p id="admin-error" class="text-red-500 text-sm mt-2 hidden"></p>
+                         <div id="admin-loading" class="hidden">Loading user data... <i class="fas fa-spinner fa-spin"></i></div>
+                         <div id="admin-data-display" class="mt-4 hidden">
+                             <h4 class="text-lg mb-2">Viewing data for: <span id="admin-viewing-email" class="font-bold text-yellow-400"></span></h4>
+                             <p class="text-sm mb-2">Next Workout Day: <span id="admin-next-day" class="font-bold"></span></p>
+                             <h5 class="text-md font-semibold mt-4 mb-2 text-gray-300">Workout History:</h5>
+                             <div id="admin-history-list">
+                                 <p id="admin-no-history" class="text-gray-500">No history found for this user.</p>
+                                 </div>
+                         </div>
+                    </div>
+                </section>
+
+            </div> </main>
+
+        <footer class="mt-8 md:mt-10 text-center text-xs md:text-sm text-gray-500 border-t border-gray-700 pt-4">
+            PWA Metal Edition v1.6 - Pain is Temporary, Glory is Forever.
+        </footer>
+    </div>
+
+    <!-- Script block removed from here -->
+</body>
 </html>

@@ -10,6 +10,7 @@
     <title>Interaktiv PWA Träningsapp v1.6 - Metal Edition (Login)</title> <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
@@ -40,7 +41,7 @@
         <main id="app-container">
              <section id="login-section">
                 <h2 class="text-2xl mb-6">Logga in för att fortsätta</h2>
-                <button id="login-btn" class="btn btn-primary" onclick="loginWithGoogle()">
+                <button id="login-btn" class="btn btn-primary">
                     <i class="fab fa-google"></i> Logga in med Google
                 </button>
                 <p id="auth-error" class="text-red-500 mt-4 hidden"></p> </section>

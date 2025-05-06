@@ -856,5 +856,13 @@ document.addEventListener('DOMContentLoaded', () => {
         notificationsBtn.classList.remove('hidden');
     }
 
+    // Add event listener for the login button
+    const loginButton = document.getElementById('login-btn');
+    if (loginButton) {
+        loginButton.addEventListener('click', loginWithGoogle);
+    } else {
+        console.error("Login button (login-btn) not found!");
+    }
+
     registerServiceWorker(); // Registrera SW
 }); 

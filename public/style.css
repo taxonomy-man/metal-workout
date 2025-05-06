@@ -1,0 +1,132 @@
+/* Behåll samma CSS som v1.5, lägg bara till stil för login/logout/admin */
+ /* Anpassade typsnitt */
+body {
+    font-family: 'Russo One', sans-serif;
+    overscroll-behavior-y: contain;
+    background-color: #000000;
+    color: #e5e7eb;
+    -webkit-tap-highlight-color: transparent; /* Ta bort blå highlight vid tryck på mobil */
+}
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Metal Mania', cursive;
+    letter-spacing: 0.05em;
+}
+/* Anpassade färger för mörkt tema */
+:root {
+    --color-primary: #dc2626; /* Röd accent */
+    --color-secondary: #4b5563; /* Mörkgrå */
+    --color-background: #111827; /* Mycket mörkblågrå för kort/sektioner */
+    --color-surface: #1f2937; /* Mörkare blågrå för ytor */
+    --color-text-primary: #f3f4f6; /* Nästan vit text */
+    --color-text-secondary: #9ca3af; /* Mellangrå text */
+    --color-border: #4b5563; /* Mörkgrå kantlinjer */
+    --color-success: #16a34a; /* Mörkare grön */
+    --color-warning: #d97706; /* Mörkare orange/gul */
+    --color-danger: #b91c1c; /* Mörkare röd */
+}
+.hidden { display: none; }
+
+/* Flikar */
+.tab-button { border-bottom-width: 3px; border-color: transparent; transition: all 0.3s ease; cursor: pointer; color: var(--color-text-secondary); padding: 0.75rem 0.5rem; /* Mindre horisontell padding */ text-transform: uppercase; font-size: 0.8rem; /* Mindre font på små skärmar */ md:font-size: 0.875rem; md:padding: 0.75rem 1rem;}
+.tab-button:hover { color: var(--color-text-primary); border-color: var(--color-secondary); }
+.tab-button.active { border-color: var(--color-primary); color: var(--color-text-primary); font-weight: bold; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Kort/Sektioner */
+.section-card { background-color: var(--color-background); border: 1px solid var(--color-border); border-radius: 0.25rem; padding: 1rem; /* Mindre padding default */ md:padding: 1.5rem; margin-bottom: 1rem; md:margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
+.info-section { background-color: var(--color-surface); border: 1px solid var(--color-border); border-radius: 0.25rem; padding: 1rem; md:padding: 1.5rem; margin-top: 1rem; md:margin-top: 1.5rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); }
+.info-section h3 { color: var(--color-text-primary); }
+.info-section ul { color: var(--color-text-secondary); margin-left: 1rem; /* Mindre indrag */ }
+
+/* Inputfält */
+input[type="number"], input[type="text"], input[type="email"], select { width: 100%; /* Full bredd för admin input */ max-width: 20rem; /* Max bredd */ padding: 0.6rem 0.5rem; /* Justerad padding */ border: 1px solid var(--color-border); border-radius: 0.25rem; text-align: left; /* Vänsterställ admin input */ background-color: var(--color-surface); color: var(--color-text-primary); font-family: 'Russo One', sans-serif; -moz-appearance: textfield; font-size: 0.9rem; /* Lite mindre text i fälten */ }
+input[type="number"] { text-align: center; width: 4.5rem; max-width: none; } /* Återställ för nummerinput */
+input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input::placeholder { color: var(--color-text-secondary); opacity: 0.7; }
+input:disabled { background-color: #374151; cursor: not-allowed; opacity: 0.6; }
+select { width: auto; min-width: 130px; /* Smalare select */ font-size: 0.9rem; }
+input[type="file"] { display: none; }
+
+/* Text för förslag/rekommendation */
+.suggestion-text { font-size: 0.7rem; /* Mindre text */ color: var(--color-text-secondary); margin-left: 0.25rem; font-style: italic; }
+.recommendation-box { background-color: rgba(220, 38, 38, 0.1); border: 1px solid var(--color-primary); color: #fecaca; padding: 0.5rem 0.75rem; /* Mindre padding */ border-radius: 0.25rem; margin-top: 0.75rem; font-size: 0.8rem; /* Mindre text */ text-align: center; }
+
+/* Knappar */
+.btn { padding: 0.6rem 1rem; /* Mindre padding default */ md:padding: 0.75rem 1.5rem; border-radius: 0.25rem; font-weight: bold; cursor: pointer; transition: all 0.2s ease; text-align: center; border: 1px solid transparent; text-transform: uppercase; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; /* Mindre gap */ font-size: 0.8rem; /* Mindre text */ md:font-size: 0.875rem; }
+.btn:disabled { background-color: #4b5563; color: #9ca3af; cursor: not-allowed; opacity: 0.5; border-color: #4b5563; }
+.btn:active:not(:disabled) { transform: scale(0.97); }
+.btn-sm { padding: 0.4rem 0.8rem; font-size: 0.75rem; }
+.btn i { font-size: 0.8em; /* Gör ikoner lite mindre än texten */ } /* Anpassa ikonstorlek */
+
+/* ... (Behåll knappfärger som innan) ... */
+.btn-primary { background-color: var(--color-primary); color: var(--color-text-primary); border-color: #f87171; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.3), 0 2px 3px rgba(0,0,0,0.4); }
+.btn-primary:hover:not(:disabled) { background-color: #b91c1c; border-color: #ef4444; }
+.btn-secondary { background-color: var(--color-secondary); color: var(--color-text-primary); border-color: #6b7280; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2), 0 2px 3px rgba(0,0,0,0.3); }
+.btn-secondary:hover:not(:disabled) { background-color: #374151; border-color: #4b5563; }
+.btn-success { background-color: var(--color-success); color: var(--color-text-primary); border-color: #4ade80; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.3), 0 2px 3px rgba(0,0,0,0.4); }
+.btn-success:hover:not(:disabled) { background-color: #15803d; border-color: #22c55e; }
+.btn-danger { background-color: var(--color-danger); color: var(--color-text-primary); border-color: #ef4444; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.3), 0 2px 3px rgba(0,0,0,0.4); }
+.btn-danger:hover:not(:disabled) { background-color: #991b1b; border-color: #dc2626; }
+.btn-warning { background-color: var(--color-warning); color: #1f2937; border-color: #fcd34d; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2), 0 2px 3px rgba(0,0,0,0.3); }
+.btn-warning:hover:not(:disabled) { background-color: #b45309; border-color: #facc15; }
+
+
+/* Timer */
+.timer-display { font-size: 2.5rem; /* Mindre på mobil */ md:font-size: 3rem; font-weight: bold; color: var(--color-text-primary); background-color: var(--color-surface); padding: 1rem 1.5rem; md:padding: 1.5rem 2.5rem; border-radius: 0.25rem; display: inline-block; min-width: 120px; md:min-width: 150px; text-align: center; border: 1px solid var(--color-border); box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+/* Set-rader */
+.set-row { display: flex; flex-direction: column; /* Stacka vertikalt default */ md:flex-row; /* Horisontellt på medium+ */ align-items: stretch; /* Sträck ut element */ md:align-items: center; justify-content: space-between; padding: 0.75rem 0.5rem; border-bottom: 1px dashed var(--color-border); gap: 0.5rem; /* Mindre gap */ }
+.set-row:last-child { border-bottom: none; }
+.set-info { font-weight: bold; color: var(--color-text-primary); font-size: 0.9rem; /* Mindre text */ text-align: center; md:text-align: left; md:min-width: 60px; md:flex-basis: 60px; }
+.set-inputs { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: center; /* Centrera inputs */ width: 100%; margin: 0.5rem 0; }
+.set-inputs label { font-size: 0.8rem; color: var(--color-text-secondary); margin-right: 0.25rem; }
+.set-actions { display: flex; gap: 0.5rem; justify-content: center; /* Centrera knappar */ width: 100%; margin-top: 0.5rem; }
+.set-status { font-weight: bold; text-align: center; /* Centrera status */ width: 100%; margin-top: 0.5rem; text-transform: uppercase; font-size: 0.75rem;}
+.set-complete { color: var(--color-success); }
+.set-pending { color: var(--color-text-secondary); }
+.set-skipped { color: var(--color-warning); }
+
+/* Historik */
+.history-entry { background-color: var(--color-surface); border: 1px solid var(--color-border); border-radius: 0.25rem; padding: 1rem; margin-bottom: 1rem; }
+.history-entry h4 { color: var(--color-primary); font-size: 1.1rem; /* Lite mindre */ }
+.history-exercise { margin-top: 0.5rem; padding-left: 0.75rem; /* Mindre indrag */ border-left: 3px solid var(--color-secondary); font-size: 0.9rem; }
+.history-exercise strong { color: var(--color-text-primary); }
+.admin-history-entry h4 { color: var(--color-warning); } /* Annan färg för adminvy */
+
+/* Statistik */
+.chart-container { position: relative; margin: auto; height: 50vh; /* Lite lägre */ max-height: 350px; width: 100%; /* Full bredd på mobil */ max-width: 800px; margin-bottom: 1.5rem; background-color: var(--color-surface); padding: 0.5rem; /* Mindre padding */ border-radius: 0.25rem; border: 1px solid var(--color-border); }
+#stats-exercise-select { background-color: var(--color-surface); color: var(--color-text-primary); border: 1px solid var(--color-border); }
+/* Container */
+.main-container { max-width: 4xl; margin-left: auto; margin-right: auto; background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.9)), url('https://placehold.co/1000x800/000000/4b5563?text=METAL+BG'); background-size: cover; background-attachment: fixed; border-radius: 0.25rem; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5); padding: 1rem; /* Mindre padding default */ md:padding: 2rem; border: 2px solid var(--color-border); min-height: 100vh; display: flex; flex-direction: column; }
+/* Header */
+header { flex-shrink: 0; } /* Förhindra att headern krymper */
+header h1 { color: var(--color-primary); text-shadow: 1px 1px 3px rgba(0,0,0,0.7); font-size: 2.5rem; md:font-size: 3rem; }
+header p { color: var(--color-text-secondary); font-size: 1rem; md:font-size: 1.1rem; }
+/* Main content area */
+main { flex-grow: 1; } /* Låt main växa och ta upp plats */
+/* Footer */
+footer { color: var(--color-text-secondary); font-size: 0.75rem; flex-shrink: 0; margin-top: auto; /* Tryck ner footern */ border-top: 1px solid var(--color-border); padding-top: 1rem; }
+
+/* Login Section */
+#login-section { text-align: center; padding: 2rem 1rem; }
+#login-section h2 { color: var(--color-primary); }
+
+/* User Info in Header */
+#user-info { text-align: right; font-size: 0.8rem; margin-bottom: 0.5rem; }
+#user-info span { color: var(--color-text-secondary); }
+#user-info button { margin-left: 0.5rem; }
+
+/* Workout Overview */
+#workout-overview-list { list-style: none; padding: 0; margin: 0; }
+#workout-overview-list li { padding: 0.5rem 0; border-bottom: 1px solid var(--color-border); font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; }
+#workout-overview-list li:last-child { border-bottom: none; }
+#workout-overview-list li.current-exercise { color: var(--color-primary); font-weight: bold; }
+#workout-overview-list li .status-icon { font-size: 0.8em; margin-left: 0.5rem; }
+#workout-overview-list li .fa-check-circle { color: var(--color-success); }
+#workout-overview-list li .fa-times-circle { color: var(--color-warning); } /* Skippad */
+#workout-overview-list li .fa-spinner { color: var(--color-text-secondary); } /* Pågående */
+
+/* Admin View */
+#admin-user-input { margin-bottom: 1rem; }
+#admin-history-list { max-height: 60vh; overflow-y: auto; } /* Scrollbar för admin-historik */
+#admin-loading { text-align: center; padding: 1rem; color: var(--color-text-secondary); } 

@@ -120,13 +120,14 @@ self.addEventListener('fetch', event => {
                 // console.log('[Service Worker] Not in cache, fetching from network:', event.request.url);
                 return fetch(event.request).then(
                     networkResponse => {
-                        // Om hämtningen lyckades, lägg en kopia i cachen för framtida bruk
-                        if (networkResponse && networkResponse.status === 200) {
+                        // Kontrollera om det är ett GET-anrop och om det lyckades
+                        if (event.request.method === 'GET' && networkResponse && networkResponse.status === 200) {
                             // Viktigt: Klona svaret eftersom det bara kan läsas en gång
                             const responseToCache = networkResponse.clone();
                             caches.open(CACHE_NAME)
                                 .then(cache => {
                                     // console.log('[Service Worker] Caching new resource:', event.request.url);
+                                    // Använd original request som nyckel
                                     cache.put(event.request, responseToCache);
                                 });
                         }
@@ -135,10 +136,15 @@ self.addEventListener('fetch', event => {
                     }
                 ).catch(error => {
                     // Om både cache och nätverk misslyckas (t.ex. offline och inte cachelagrad)
-                    console.error('[Service Worker] Fetch failed; returning offline fallback or error.', error);
+                    console.error('[Service Worker] Fetch failed; returning offline fallback or error.', event.request.url, error);
                     // Här kan man returnera en generell offline-sida om man har en:
                     // return caches.match('/offline.html');
                     // Eller bara låta felet ske så appen hanterar det
+                    // Returnera ett Error Response för att signalera problemet tydligare
+                    return new Response(`Network error: ${error.message}`, {
+                        status: 408, // Request Timeout
+                        headers: { 'Content-Type': 'text/plain' }
+                    });
                 });
             })
     );

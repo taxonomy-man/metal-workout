@@ -25,7 +25,7 @@ const googleProvider = new firebase.auth.GoogleAuthProvider();
 //      ADMIN CONFIG
 // ==========================
 // Lägg till din egen e-postadress här för att aktivera admin-fliken
-const ADMIN_EMAIL = "taxonomyrules@gmail.com"; // <<< VIKTIGT: ÄNDRA DENNA!
+const ADMIN_EMAIL = "adambergman90@gmail.com"; // <<< VIKTIGT: ÄNDRA DENNA!
 
 // ==========================
 //      PROGRAM DEFINITION (Keep as is)

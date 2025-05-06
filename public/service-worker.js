@@ -1,12 +1,12 @@
 // Definiera cache-namn (ändra vid större uppdateringar för att tvinga omcaching)
-const CACHE_NAME = 'metal-workout-cache-v1.4';
+const CACHE_NAME = 'metal-workout-cache-v1.5';
 
 // Lista över filer och resurser som ska cachelagras när Service Worker installeras
 const URLS_TO_CACHE = [
   '/', // Cachelagra startsidan
   'index.html', // Cachelagra huvud-HTML-filen (byt namn om din fil heter något annat)
-  // Lägg till CSS om du har separat fil: 'styles/main.css',
-  'https://cdn.tailwindcss.com', // Cachelagra Tailwind (kan vara svårt, men värt ett försök)
+  'css/style.css', // Cachelagra den lokalt byggda Tailwind CSS
+  // 'https://cdn.tailwindcss.com', // BORTTAGEN - Använder lokal build nu
   'https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js', // Cachelagra Tone.js
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js', // Cachelagra Chart.js
   'https://fonts.googleapis.com/css2?family=Metal+Mania&family=Russo+One&display=swap', // Cachelagra typsnitt
